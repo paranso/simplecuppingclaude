@@ -1,4 +1,12 @@
 const SimpleCuppingForm = () => {
+    const [formData, setFormData] = React.useState({
+        roastingDate: '',
+        cuppingDate: '',
+        coffeeName: '',
+        dropTime: '',
+        agtronNumber: ''
+    });
+    
     const [scores, setScores] = React.useState({
         aroma: 3,
         acidity: 3,
@@ -28,7 +36,17 @@ const SimpleCuppingForm = () => {
         초콜릿: ''
     });
     const [roastingNotes, setRoastingNotes] = React.useState('');
+    const [showSummary, setShowSummary] = React.useState(false);
 
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({
+            ...prev,
+            [name]: value
+        }));
+    };
+
+    // 기존의 다른 핸들러 함수들...
     const handleScoreChange = (category, value) => {
         setScores(prev => ({
             ...prev,
@@ -50,7 +68,6 @@ const SimpleCuppingForm = () => {
 
     const getRecommendation = () => {
         let recommendations = [];
-
         if (scores.acidity > 3) {
             recommendations.push("참고: 산미가 강한 편입니다. 로스팅 온도를 약간 높이면 산미를 줄일 수 있습니다.");
         }
@@ -60,11 +77,14 @@ const SimpleCuppingForm = () => {
         if (scores.sweetness < 3) {
             recommendations.push("참고: 단맛을 높이려면 첫 크랙 후 시간을 좀 더 가져가보세요.");
         }
-
         return recommendations.join(' ');
     };
 
-     const scoreLabels = {
+    const handleSave = () => {
+        setShowSummary(true);
+    };
+
+    const scoreLabels = {
         aroma: '향',
         acidity: '산미',
         sweetness: '단맛',
@@ -73,27 +93,86 @@ const SimpleCuppingForm = () => {
     };
 
     const scoreDescriptions = {
-        aroma: 'fragrance: 커피를 분쇄한 후 나는 향, Aroma: 뜨거운 물을 부은 후 나는 향',
-        acidity: '부드럽거나 날카로운 과일 산미',
-        sweetness: '커피에서 느껴지는 단맛',
-        body: '입안에서 느겨지는 무게감과 질감',
-        aftertaste: '마신 후 입안에 남는 여운의 길이와 맛의 변화'
+        aroma: 'Fragrance: 분쇄된 원두의 향, Aroma: 뜨거운 물을 부은 후 올라오는 향',
+        acidity: '커피에서 느껴지는 신맛의 정도와 특성',
+        sweetness: '커피가 가진 자연스러운 단맛',
+        body: '입안에서 느껴지는 커피의 무게감이나 질감',
+        aftertaste: '커피를 마신 후 입안에 남아있는 긍정적인 맛과 향의 지속 시간'
     };
 
+    const Summary = () => (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                <h2 className="text-xl font-bold mb-4">커핑 결과 요약</h2>
+                
+                <div className="space-y-4">
+                    <div className="border-b pb-2">
+                        <h3 className="font-semibold">기본 정보</h3>
+                        <p>커피명: {formData.coffeeName}</p>
+                        <p>로스팅 날짜: {formData.roastingDate}</p>
+                        <p>커핑 날짜: {formData.cuppingDate}</p>
+                        <p>배출 시간/온도: {formData.dropTime}</p>
+                        <p>Agtron#: {formData.agtronNumber}</p>
+                    </div>
+
+                    <div className="border-b pb-2">
+                        <h3 className="font-semibold">평가 점수</h3>
+                        {Object.entries(scores).map(([key, value]) => (
+                            <p key={key}>{scoreLabels[key]}: {value}/5</p>
+                        ))}
+                    </div>
+
+                    {selectedAromas.length > 0 && (
+                        <div className="border-b pb-2">
+                            <h3 className="font-semibold">감지된 향미</h3>
+                            <p>{selectedAromas.join(', ')}</p>
+                        </div>
+                    )}
+
+                    {notes && (
+                        <div className="border-b pb-2">
+                            <h3 className="font-semibold">추가 메모</h3>
+                            <p>{notes}</p>
+                        </div>
+                    )}
+
+                    {roastingNotes && (
+                        <div className="border-b pb-2">
+                            <h3 className="font-semibold">로스팅 노트</h3>
+                            <p>{roastingNotes}</p>
+                            <p className="text-sm text-gray-500 mt-1">{getRecommendation()}</p>
+                        </div>
+                    )}
+                </div>
+
+                <div className="mt-6 flex justify-end">
+                    <button
+                        onClick={() => setShowSummary(false)}
+                        className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                        닫기
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
 
     return (
         <div className="container mx-auto px-4 py-8 max-w-2xl">
             <div className="bg-white rounded-lg shadow-lg p-6">
                 <h1 className="text-2xl font-bold text-center mb-6">Simple Cupping Form</h1>
 
-                {/* 기본 정보 */}
+                {/* 기본 정보 - 수정된 레이아웃 */}
                 <div className="mb-8">
                     <h2 className="text-lg font-semibold mb-4">기본 정보</h2>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-4 mb-4">
                         <div>
                             <label className="block text-sm font-medium mb-1">로스팅 날짜</label>
                             <input
                                 type="date"
+                                name="roastingDate"
+                                value={formData.roastingDate}
+                                onChange={handleInputChange}
                                 className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                             />
                         </div>
@@ -101,35 +180,48 @@ const SimpleCuppingForm = () => {
                             <label className="block text-sm font-medium mb-1">커핑 날짜</label>
                             <input
                                 type="date"
+                                name="cuppingDate"
+                                value={formData.cuppingDate}
+                                onChange={handleInputChange}
                                 className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                             />
                         </div>
                     </div>
-                    <div className="grid grid-cols-3 gap-4 mt-4">
-                         <div>
-                            <label className="block text-sm font-medium mb-1">커피 이름</label>
-                            <input
-                                type="text"
-                                className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                        </div>
-                         <div>
+                    <div className="mb-4">
+                        <label className="block text-sm font-medium mb-1">커피 이름</label>
+                        <input
+                            type="text"
+                            name="coffeeName"
+                            value={formData.coffeeName}
+                            onChange={handleInputChange}
+                            className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
                             <label className="block text-sm font-medium mb-1">배출시간과 온도</label>
                             <input
                                 type="text"
+                                name="dropTime"
+                                value={formData.dropTime}
+                                onChange={handleInputChange}
                                 className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                             />
                         </div>
-                         <div>
+                        <div>
                             <label className="block text-sm font-medium mb-1">Agtron#</label>
                             <input
                                 type="text"
+                                name="agtronNumber"
+                                value={formData.agtronNumber}
+                                onChange={handleInputChange}
                                 className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                             />
                         </div>
                     </div>
                 </div>
 
+                {/* 나머지 섹션들은 동일하게 유지... */}
                 {/* 평가 항목 */}
                 <div className="mb-8">
                     <h2 className="text-lg font-semibold mb-4">평가 항목</h2>
@@ -139,16 +231,16 @@ const SimpleCuppingForm = () => {
                                 {scoreLabels[category]}
                                 <span className="ml-2 text-gray-500">{value}</span>
                             </label>
-                             <p className="text-xs text-gray-500 mb-1">{scoreDescriptions[category]}</p>
+                            <p className="text-xs text-gray-400 mb-1">{scoreDescriptions[category]}</p>
                             <input
                                 type="range"
                                 min="1"
-                               max="5"
+                                max="5"
                                 value={value}
-                               onChange={(e) => handleScoreChange(category, e.target.value)}
+                                onChange={(e) => handleScoreChange(category, e.target.value)}
                                 className="w-full mb-1"
                             />
-                             <div className="flex justify-between text-xs text-gray-500">
+                            <div className="flex justify-between text-xs text-gray-500">
                                 <span>약함</span>
                                 <span>강함</span>
                             </div>
@@ -226,10 +318,10 @@ const SimpleCuppingForm = () => {
                     </div>
                 </div>
 
-                 {/* 로스팅 추천 */}
-                 <div>
+                {/* 로스팅 추천 */}
+                <div className="mb-8">
                     <h2 className="text-lg font-semibold mb-4">로스팅 추천 방향</h2>
-                     <div className="bg-white border rounded-lg p-4 h-32">
+                    <div className="bg-white border rounded-lg p-4 h-32">
                         <textarea
                             value={roastingNotes}
                             onChange={(e) => setRoastingNotes(e.target.value)}
@@ -241,7 +333,20 @@ const SimpleCuppingForm = () => {
                         </div>
                     </div>
                 </div>
+
+                {/* 저장 버튼 */}
+                <div className="flex justify-end">
+                    <button
+                        onClick={handleSave}
+                        className="px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                        저장
+                    </button>
+                </div>
             </div>
+
+            {/* 요약 모달 */}
+            {showSummary && <Summary />}
         </div>
     );
 };
