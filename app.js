@@ -21,7 +21,8 @@ const SimpleCuppingForm = () => {
         '허브': ['민트', '캐모마일', '라벤더', '로즈마리', '타임'],
         '견과류': ['아몬드', '헤이즐넛', '피칸', '땅콩', '호두'],
         '캐러멜': ['흑설탕', '버터스카치', '메이플시럽', '토피', '캔디'],
-        '초콜릿': ['다크초콜릿', '밀크초콜릿', '코코아', '초콜릿시럽', '모카']
+        '초콜릿': ['다크초콜릿', '밀크초콜릿', '코코아', '초콜릿시럽', '모카'],
+        '디펙트': ['언데', '오버', '베이크드', '몰디', '메탈릭', '과발효']
     };
 
     const [selectedAromas, setSelectedAromas] = React.useState([]);
@@ -33,7 +34,8 @@ const SimpleCuppingForm = () => {
         허브: '',
         견과류: '',
         캐러멜: '',
-        초콜릿: ''
+        초콜릿: '',
+        디펙트: ''
     });
     const [roastingNotes, setRoastingNotes] = React.useState('');
     const [showSummary, setShowSummary] = React.useState(false);
@@ -188,13 +190,14 @@ const SimpleCuppingForm = () => {
                         </div>
                     </div>
                     <div className="mb-4">
-                        <label className="block text-sm font-medium mb-1">커피 이름</label>
+                        <label className="block text-sm font-medium mb-1">커피 정보</label>
                         <input
                             type="text"
                             name="coffeeName"
                             value={formData.coffeeName}
                             onChange={handleInputChange}
-                            className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="커피이름, 농장명, 프로세싱 등"
+                            className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-300"
                         />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
@@ -335,7 +338,7 @@ const SimpleCuppingForm = () => {
                 </div>
 
                 {/* 저장 버튼 */}
-                <div className="flex justify-end">
+                <div className="flex justify-center">
                     <button
                         onClick={handleSave}
                         className="px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
