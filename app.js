@@ -2,7 +2,7 @@ const SimpleCuppingForm = () => {
     const [formData, setFormData] = React.useState({
         roastingDate: '',
         cuppingDate: '',
-        coffeeInfo: '',
+        coffeeName: '',
         dropTime: '',
         agtronNumber: ''
     });
@@ -21,8 +21,7 @@ const SimpleCuppingForm = () => {
         '허브': ['민트', '캐모마일', '라벤더', '로즈마리', '타임'],
         '견과류': ['아몬드', '헤이즐넛', '피칸', '땅콩', '호두'],
         '캐러멜': ['흑설탕', '버터스카치', '메이플시럽', '토피', '캔디'],
-        '초콜릿': ['다크초콜릿', '밀크초콜릿', '코코아', '초콜릿시럽', '모카'],
-        '로스팅 디펙트': ['언더', '오버', '베이크드', '몰트', '메탈릭', '발효취']
+        '초콜릿': ['다크초콜릿', '밀크초콜릿', '코코아', '초콜릿시럽', '모카']
     };
 
     const [selectedAromas, setSelectedAromas] = React.useState([]);
@@ -34,8 +33,7 @@ const SimpleCuppingForm = () => {
         허브: '',
         견과류: '',
         캐러멜: '',
-        초콜릿: '',
-        '로스팅 디펙트': ''
+        초콜릿: ''
     });
     const [roastingNotes, setRoastingNotes] = React.useState('');
     const [showSummary, setShowSummary] = React.useState(false);
@@ -48,6 +46,7 @@ const SimpleCuppingForm = () => {
         }));
     };
 
+    // 기존의 다른 핸들러 함수들...
     const handleScoreChange = (category, value) => {
         setScores(prev => ({
             ...prev,
@@ -109,7 +108,7 @@ const SimpleCuppingForm = () => {
                 <div className="space-y-4">
                     <div className="border-b pb-2">
                         <h3 className="font-semibold">기본 정보</h3>
-                        <p>커피 정보: {formData.coffeeInfo}</p>
+                        <p>커피명: {formData.coffeeName}</p>
                         <p>로스팅 날짜: {formData.roastingDate}</p>
                         <p>커핑 날짜: {formData.cuppingDate}</p>
                         <p>배출 시간/온도: {formData.dropTime}</p>
@@ -157,12 +156,13 @@ const SimpleCuppingForm = () => {
             </div>
         </div>
     );
-return (
+
+    return (
         <div className="container mx-auto px-4 py-8 max-w-2xl">
             <div className="bg-white rounded-lg shadow-lg p-6">
                 <h1 className="text-2xl font-bold text-center mb-6">Simple Cupping Form</h1>
 
-                {/* 기본 정보 */}
+                {/* 기본 정보 - 수정된 레이아웃 */}
                 <div className="mb-8">
                     <h2 className="text-lg font-semibold mb-4">기본 정보</h2>
                     <div className="grid grid-cols-2 gap-4 mb-4">
@@ -188,14 +188,13 @@ return (
                         </div>
                     </div>
                     <div className="mb-4">
-                        <label className="block text-sm font-medium mb-1">커피 정보</label>
+                        <label className="block text-sm font-medium mb-1">커피 이름</label>
                         <input
                             type="text"
-                            name="coffeeInfo"
-                            value={formData.coffeeInfo}
+                            name="coffeeName"
+                            value={formData.coffeeName}
                             onChange={handleInputChange}
-                            placeholder="커피이름, 농장명, 프로세싱 등"
-                            className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
+                            className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
@@ -222,6 +221,7 @@ return (
                     </div>
                 </div>
 
+                {/* 나머지 섹션들은 동일하게 유지... */}
                 {/* 평가 항목 */}
                 <div className="mb-8">
                     <h2 className="text-lg font-semibold mb-4">평가 항목</h2>
@@ -282,7 +282,7 @@ return (
                                             ...prev,
                                             [category]: e.target.value
                                         }))}
-                                        placeholder={category === '로스팅 디펙트' ? "기타 사항을 기록하세요..." : `${category}에 대한 세부 평가를 기록하세요...`}
+                                        placeholder={`${category}에 대한 세부 평가를 기록하세요...`}
                                         className="w-full p-2 border rounded h-20 text-sm resize-none"
                                     />
                                 </div>
@@ -335,7 +335,7 @@ return (
                 </div>
 
                 {/* 저장 버튼 */}
-                <div className="flex justify-center">
+                <div className="flex justify-end">
                     <button
                         onClick={handleSave}
                         className="px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -351,4 +351,8 @@ return (
     );
 };
 
-export default SimpleCuppingForm;
+const rootElement = document.getElementById('root');
+if (rootElement) {
+    const root = ReactDOM.createRoot(rootElement);
+    root.render(<SimpleCuppingForm />);
+}
