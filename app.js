@@ -10,7 +10,7 @@ const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby1coezOe5iRN1Z
 const SimpleCuppingForm = () => {
     // --- 상태 관리 ---
     const initialFormData = {
-        roastingDate: '', cuppingDate: '', coffeeName: '', dropTime: '', agtronNumber: ''
+        roastingDate: '', cuppingDate: '', userId: '', coffeeName: '', dropTime: '', agtronNumber: ''
     };
     const initialScores = { aroma: 3, acidity: 3, sweetness: 3, body: 3, aftertaste: 3 };
     const initialCustomNotes = { 꽃: '', 과일류: '', 허브: '', 견과류: '', 캐러멜: '', 초콜릿: '', 디펙트: '' };
@@ -96,6 +96,7 @@ const SimpleCuppingForm = () => {
         const dataToSend = {
             roastingDate: formData.roastingDate,
             cuppingDate: formData.cuppingDate,
+            userId: formData.userId, // 이름 or ID 추가
             coffeeName: formData.coffeeName,
             dropTimeTemp: formData.dropTime,
             agtron: formData.agtronNumber,
@@ -178,6 +179,7 @@ const SimpleCuppingForm = () => {
                     <p><strong className="font-semibold">커피명:</strong> {data.coffeeName}</p>
                     <p><strong className="font-semibold">로스팅 날짜:</strong> {data.roastingDate}</p>
                     <p><strong className="font-semibold">커핑 날짜:</strong> {data.cuppingDate}</p>
+                    <p><strong className="font-semibold">이름 or ID:</strong> {data.userId}</p>
                     <p><strong className="font-semibold">배출 시간/온도:</strong> {data.dropTime}</p>
                     <p><strong className="font-semibold">Agtron#:</strong> {data.agtronNumber}</p>
                     <div className="pt-2 mt-2 border-t">
@@ -245,6 +247,7 @@ const SimpleCuppingForm = () => {
                          <div><label className="block text-sm font-medium mb-1">로스팅 날짜</label><input type="date" name="roastingDate" value={formData.roastingDate} onChange={handleInputChange} className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"/></div>
                          <div><label className="block text-sm font-medium mb-1">커핑 날짜</label><input type="date" name="cuppingDate" value={formData.cuppingDate} onChange={handleInputChange} className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"/></div>
                      </div>
+                     <div className="mb-4"><label className="block text-sm font-medium mb-1">이름 or ID</label><input type="text" name="userId" value={formData.userId} onChange={handleInputChange} placeholder="이름 또는 ID를 입력하세요" className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-300"/></div>
                      <div className="mb-4"><label className="block text-sm font-medium mb-1">커피 정보</label><input type="text" name="coffeeName" value={formData.coffeeName} onChange={handleInputChange} placeholder="커피이름, 농장명, 프로세싱 등" className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-300"/></div>
                      <div className="grid grid-cols-2 gap-4">
                          <div><label className="block text-sm font-medium mb-1">배출시간과 온도</label><input type="text" name="dropTime" value={formData.dropTime} onChange={handleInputChange} className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"/></div>
