@@ -25,8 +25,8 @@ const SimpleCuppingForm = () => {
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [statusMessage, setStatusMessage] = useState('');
-    const [showSummary, setShowSummary] = useState(false); // 요약 섹션 표시 여부 상태 추가
-    const [summaryData, setSummaryData] = useState(null); // 요약 데이터 상태 추가
+    const [showSummary, setShowSummary] = useState(false);
+    const [summaryData, setSummaryData] = useState(null);
 
     const aromaWheel = {
         '꽃': ['장미', '자스민', '라일락', '커피블라썸', '오렌지꽃'],
@@ -37,11 +37,11 @@ const SimpleCuppingForm = () => {
         '초콜릿': ['다크초콜릿', '밀크초콜릿', '코코아', '초콜릿시럽', '모카'],
         '디펙트': ['언더', '오버', '베이크드', '몰디', '메탈릭', '과발효']
     };
-     const scoreLabels = { aroma: '향', acidity: '산미', sweetness: '단맛', body: '바디감', aftertaste: '후미' };
-     const scoreDescriptions = {
-         aroma: 'Fragrance(분쇄향) / Aroma(습식향)', acidity: '신맛의 정도와 특성',
-         sweetness: '자연스러운 단맛', body: '입안의 무게감/질감', aftertaste: '긍정적 맛/향의 지속성'
-     };
+    const scoreLabels = { aroma: '향', acidity: '산미', sweetness: '단맛', body: '바디감', aftertaste: '후미' };
+    const scoreDescriptions = {
+        aroma: 'Fragrance(분쇄향) / Aroma(습식향)', acidity: '신맛의 정도와 특성',
+        sweetness: '자연스러운 단맛', body: '입안의 무게감/질감', aftertaste: '긍정적 맛/향의 지속성'
+    };
 
     // --- 핸들러 함수들 ---
     const handleInputChange = (e) => {
@@ -76,27 +76,27 @@ const SimpleCuppingForm = () => {
         return recommendations.join(' ');
     };
 
-    // --- 데이터 저장 함수 (핵심 수정) ---
-    const handleSave = async () => { // 함수 이름 변경 handleSaveToSheet -> handleSave
+    // --- 데이터 저장 함수 ---
+    const handleSave = async () => {
         if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL === '여기에_복사한_Apps_Script_웹_앱_URL_붙여넣기') {
             setStatusMessage('오류: Google Apps Script URL이 설정되지 않았습니다. app.js 파일을 확인하세요.');
-            setShowSummary(false); // 오류 시 요약 숨김
+            setShowSummary(false);
             return;
         }
         if (isSubmitting) return;
 
         setIsSubmitting(true);
         setStatusMessage('저장 중...');
-        setShowSummary(false); // 저장 시작 시 이전 요약 숨김
+        setShowSummary(false);
 
-        const recommendation = getRecommendation(); // 추천 내용 미리 계산
-        const currentCustomNotesString = JSON.stringify(customNotes); // 현재 customNotes 상태를 문자열로
+        const recommendation = getRecommendation();
+        const currentCustomNotesString = JSON.stringify(customNotes);
 
-        // Apps Script로 보낼 데이터 객체 구성
+        // 스프레드시트 열 순서에 맞게 데이터 객체 구성
         const dataToSend = {
             roastingDate: formData.roastingDate,
             cuppingDate: formData.cuppingDate,
-            userId: formData.userId, // 이름 or ID 추가
+            userId: formData.userId,
             coffeeName: formData.coffeeName,
             dropTimeTemp: formData.dropTime,
             agtron: formData.agtronNumber,
@@ -106,10 +106,10 @@ const SimpleCuppingForm = () => {
             bodyScore: scores.body,
             aftertasteScore: scores.aftertaste,
             detectedFlavors: selectedAromas.join(', '),
-            detailedAromaNotes: currentCustomNotesString, // 위에서 만든 문자열 사용
+            detailedAromaNotes: currentCustomNotesString,
             additionalNotes: notes,
             roastingNotes: roastingNotes,
-            roastingRecommendation: recommendation // 위에서 계산한 추천 내용
+            roastingRecommendation: recommendation
         };
 
         try {
@@ -120,42 +120,39 @@ const SimpleCuppingForm = () => {
             });
 
             if (!response.ok) {
-                 throw new Error(`서버 응답 오류: ${response.status} ${response.statusText}`);
+                throw new Error(`서버 응답 오류: ${response.status} ${response.statusText}`);
             }
 
             const result = await response.json();
 
             if (result.status === 'success') {
                 setStatusMessage('성공: 데이터가 저장되었습니다.');
-                // 저장 성공 시, 현재 폼 데이터를 요약 데이터로 설정하고 요약 표시
-                setSummaryData({ // 저장된 데이터를 기반으로 요약 데이터 생성
-                    ...formData, // 기본 정보
-                    ...scores,   // 점수
-                    selectedAromas: selectedAromas, // 선택된 향미 배열
-                    notes: notes, // 추가 노트
-                    customNotes: customNotes, // 향미 세부 노트 객체
-                    roastingNotes: roastingNotes, // 로스팅 노트
-                    recommendation: recommendation // 자동 추천
+                setSummaryData({
+                    ...formData,
+                    ...scores,
+                    selectedAromas: selectedAromas,
+                    notes: notes,
+                    customNotes: customNotes,
+                    roastingNotes: roastingNotes,
+                    recommendation: recommendation
                 });
-                setShowSummary(true); // 요약 섹션 표시
-                // 성공 후 폼 초기화 (선택 사항)
-                // resetForm();
+                setShowSummary(true);
+                // resetForm(); // 필요시 폼 초기화
             } else {
                 setStatusMessage('실패: ' + (result.message || '알 수 없는 오류가 발생했습니다.'));
                 console.error("Apps Script Error:", result);
-                setShowSummary(false); // 실패 시 요약 숨김
+                setShowSummary(false);
             }
-
         } catch (error) {
             console.error('데이터 저장 중 네트워크 또는 스크립트 오류 발생:', error);
             setStatusMessage(`오류 발생: ${error.message}. 개발자 콘솔을 확인하세요.`);
-            setShowSummary(false); // 오류 시 요약 숨김
+            setShowSummary(false);
         } finally {
             setIsSubmitting(false);
         }
     };
 
-    // 폼 초기화 함수 (필요시 사용)
+    // 폼 초기화 함수
     const resetForm = () => {
         setFormData(initialFormData);
         setScores(initialScores);
@@ -164,8 +161,7 @@ const SimpleCuppingForm = () => {
         setNotes('');
         setCustomNotes(initialCustomNotes);
         setRoastingNotes('');
-        setShowSummary(false); // 폼 초기화 시 요약 숨김
-        // setStatusMessage('');
+        setShowSummary(false);
     };
 
     // --- 요약 결과 표시 컴포넌트 ---
@@ -176,17 +172,17 @@ const SimpleCuppingForm = () => {
             <div className="mt-8 p-6 bg-green-50 border border-green-200 rounded-lg shadow-sm">
                 <h2 className="text-xl font-bold mb-4 text-green-800">저장된 결과 요약</h2>
                 <div className="space-y-3 text-sm">
-                    <p><strong className="font-semibold">커피명:</strong> {data.coffeeName}</p>
                     <p><strong className="font-semibold">로스팅 날짜:</strong> {data.roastingDate}</p>
                     <p><strong className="font-semibold">커핑 날짜:</strong> {data.cuppingDate}</p>
                     <p><strong className="font-semibold">이름 or ID:</strong> {data.userId}</p>
+                    <p><strong className="font-semibold">커피명:</strong> {data.coffeeName}</p>
                     <p><strong className="font-semibold">배출 시간/온도:</strong> {data.dropTime}</p>
                     <p><strong className="font-semibold">Agtron#:</strong> {data.agtronNumber}</p>
                     <div className="pt-2 mt-2 border-t">
-                         <h4 className="font-semibold mb-1">평가 점수:</h4>
-                         {Object.entries(scoreLabels).map(([key, label]) => (
-                             <p key={key}>{label}: {data[key]}/5</p>
-                         ))}
+                        <h4 className="font-semibold mb-1">평가 점수:</h4>
+                        {Object.entries(scoreLabels).map(([key, label]) => (
+                            <p key={key}>{label}: {data[key]}/5</p>
+                        ))}
                     </div>
                     {data.selectedAromas && data.selectedAromas.length > 0 && (
                         <div className="pt-2 mt-2 border-t">
@@ -194,15 +190,6 @@ const SimpleCuppingForm = () => {
                             <p>{data.selectedAromas.join(', ')}</p>
                         </div>
                     )}
-                     {/* 향미 세부 노트 요약 (간단히 표시하거나 필요시 더 자세히) */}
-                    {/* {Object.entries(data.customNotes || {}).filter(([key, value]) => value).length > 0 && (
-                        <div className="pt-2 mt-2 border-t">
-                             <h4 className="font-semibold mb-1">향미 세부 노트:</h4>
-                             {Object.entries(data.customNotes).filter(([key, value]) => value).map(([key, value]) => (
-                                 <p key={key}><strong>{key}:</strong> {value}</p>
-                             ))}
-                        </div>
-                    )} */}
                     {data.notes && (
                         <div className="pt-2 mt-2 border-t">
                             <h4 className="font-semibold mb-1">추가 메모:</h4>
@@ -215,23 +202,22 @@ const SimpleCuppingForm = () => {
                             <p className="whitespace-pre-wrap">{data.roastingNotes}</p>
                         </div>
                     )}
-                     {data.recommendation && (
+                    {data.recommendation && (
                         <div className="pt-2 mt-2 border-t">
                             <h4 className="font-semibold mb-1">자동 추천:</h4>
                             <p>{data.recommendation}</p>
                         </div>
                     )}
                 </div>
-                 <button
-                     onClick={() => setShowSummary(false)} // 닫기 버튼 추가
-                     className="mt-4 px-4 py-1 bg-gray-300 text-gray-700 text-xs rounded hover:bg-gray-400"
-                 >
-                     요약 닫기
-                 </button>
+                <button
+                    onClick={() => setShowSummary(false)}
+                    className="mt-4 px-4 py-1 bg-gray-300 text-gray-700 text-xs rounded hover:bg-gray-400"
+                >
+                    요약 닫기
+                </button>
             </div>
         );
     };
-
 
     // --- UI 렌더링 ---
     return (
@@ -239,24 +225,23 @@ const SimpleCuppingForm = () => {
             <div className="bg-white rounded-lg shadow-lg p-6">
                 <h1 className="text-2xl font-bold text-center mb-6">Simple Cupping Form</h1>
 
-                {/* --- 폼 입력 필드들 (기존과 동일) --- */}
-                 {/* 기본 정보 */}
-                 <div className="mb-8 border-b pb-6">
-                     <h2 className="text-lg font-semibold mb-4">기본 정보</h2>
-                      <div className="grid grid-cols-2 gap-4 mb-4">
-                         <div><label className="block text-sm font-medium mb-1">로스팅 날짜</label><input type="date" name="roastingDate" value={formData.roastingDate} onChange={handleInputChange} className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"/></div>
-                         <div><label className="block text-sm font-medium mb-1">커핑 날짜</label><input type="date" name="cuppingDate" value={formData.cuppingDate} onChange={handleInputChange} className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"/></div>
-                     </div>
-                     <div className="mb-4"><label className="block text-sm font-medium mb-1">이름 or ID</label><input type="text" name="userId" value={formData.userId} onChange={handleInputChange} placeholder="이름 또는 ID를 입력하세요" className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-300"/></div>
-                     <div className="mb-4"><label className="block text-sm font-medium mb-1">커피 정보</label><input type="text" name="coffeeName" value={formData.coffeeName} onChange={handleInputChange} placeholder="커피이름, 농장명, 프로세싱 등" className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-300"/></div>
-                     <div className="grid grid-cols-2 gap-4">
-                         <div><label className="block text-sm font-medium mb-1">배출시간과 온도</label><input type="text" name="dropTime" value={formData.dropTime} onChange={handleInputChange} className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"/></div>
-                         <div><label className="block text-sm font-medium mb-1">Agtron#</label><input type="text" name="agtronNumber" value={formData.agtronNumber} onChange={handleInputChange} className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"/></div>
-                     </div>
-                 </div>
+                {/* 기본 정보 */}
+                <div className="mb-8 border-b pb-6">
+                    <h2 className="text-lg font-semibold mb-4">기본 정보</h2>
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                        <div><label className="block text-sm font-medium mb-1">로스팅 날짜</label><input type="date" name="roastingDate" value={formData.roastingDate} onChange={handleInputChange} className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"/></div>
+                        <div><label className="block text-sm font-medium mb-1">커핑 날짜</label><input type="date" name="cuppingDate" value={formData.cuppingDate} onChange={handleInputChange} className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"/></div>
+                    </div>
+                    <div className="mb-4"><label className="block text-sm font-medium mb-1">이름 or ID</label><input type="text" name="userId" value={formData.userId} onChange={handleInputChange} placeholder="이름 또는 ID를 입력하세요" className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-300"/></div>
+                    <div className="mb-4"><label className="block text-sm font-medium mb-1">커피 정보</label><input type="text" name="coffeeName" value={formData.coffeeName} onChange={handleInputChange} placeholder="커피이름, 농장명, 프로세싱 등" className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-300"/></div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div><label className="block text-sm font-medium mb-1">배출시간과 온도</label><input type="text" name="dropTime" value={formData.dropTime} onChange={handleInputChange} className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"/></div>
+                        <div><label className="block text-sm font-medium mb-1">Agtron#</label><input type="text" name="agtronNumber" value={formData.agtronNumber} onChange={handleInputChange} className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"/></div>
+                    </div>
+                </div>
 
-                 {/* 평가 항목 */}
-                 <div className="mb-8 border-b pb-6">
+                {/* 평가 항목 */}
+                <div className="mb-8 border-b pb-6">
                     <h2 className="text-lg font-semibold mb-4">평가 항목</h2>
                     {Object.entries(scores).map(([category, value]) => (
                         <div key={category} className="mb-6">
@@ -294,7 +279,7 @@ const SimpleCuppingForm = () => {
                     ))}
                 </div>
 
-                 {/* 선택된 향미 표시 */}
+                {/* 선택된 향미 표시 */}
                 {selectedAromas.length > 0 && (
                     <div className="mb-8 border-b pb-6">
                         <h3 className="text-md font-semibold mb-2">감지된 주요 향미:</h3>
@@ -307,7 +292,7 @@ const SimpleCuppingForm = () => {
                 {/* 메모 */}
                 <div className="mb-8 border-b pb-6">
                     <h2 className="text-lg font-semibold mb-4">추가 메모</h2>
-                     <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="전체적인 인상, 질감, 밸런스 등 자유롭게 기록..." className="w-full h-24 p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"/>
+                    <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="전체적인 인상, 질감, 밸런스 등 자유롭게 기록..." className="w-full h-24 p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"/>
                 </div>
 
                 {/* 로스팅 노트 및 추천 */}
@@ -323,11 +308,11 @@ const SimpleCuppingForm = () => {
                 {/* 저장 버튼 및 상태 메시지 */}
                 <div className="mt-8 flex flex-col items-center">
                     <button
-                        onClick={handleSave} // 변경된 함수 호출, 텍스트 변경
+                        onClick={handleSave}
                         disabled={isSubmitting}
                         className={`w-full md:w-1/2 px-6 py-3 text-white font-semibold rounded shadow-md transition-colors duration-200 ${isSubmitting ? 'bg-indigo-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
                     >
-                        {isSubmitting ? '저장 중...' : '저장'} {/* 버튼 텍스트 변경 */}
+                        {isSubmitting ? '저장 중...' : '저장'}
                     </button>
                     {statusMessage && (
                         <p className={`mt-4 text-sm text-center ${statusMessage.startsWith('성공') ? 'text-green-600' : statusMessage.startsWith('오류') || statusMessage.startsWith('실패') ? 'text-red-600' : 'text-gray-700'}`}>
@@ -336,7 +321,7 @@ const SimpleCuppingForm = () => {
                     )}
                 </div>
 
-                {/* --- 결과 요약 표시 섹션 (저장 성공 시 나타남) --- */}
+                {/* 결과 요약 표시 섹션 */}
                 {showSummary && <ResultSummary data={summaryData} />}
 
             </div>
