@@ -3,14 +3,745 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>간단한 커피 커핑 폼</title>
+    <title>Simple Cupping Form</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 글래스모피즘 효과 */
+        .glass {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .glass-dark {
+            background: rgba(101, 128, 111, 0.08);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(101, 128, 111, 0.15);
+        }
+        
+        /* 세련된 그린 색상 팔레트 */
+        .bg-sage-green { background-color: #65806F; }
+        .bg-forest-green { background-color: #52796F; }
+        .bg-warm-gray { background-color: #8B7D6B; }
+        .text-sage-green { color: #65806F; }
+        .text-forest-green { color: #52796F; }
+        .text-warm-gray { color: #8B7D6B; }
+        
+        /* 애니메이션 */
+        .fade-in {
+            animation: fadeIn 0.6s ease-out forwards;
+            opacity: 0;
+        }
+        
+        .slide-up {
+            animation: slideUp 0.8s ease-out forwards;
+            opacity: 0;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* 진행률 바 애니메이션 */
+        .progress-fill {
+            transition: width 0.5s ease-in-out;
+        }
+        
+        /* 호버 효과 */
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        
+        /* 점수 시각화 */
+        .score-bar {
+            transition: width 0.8s ease-out;
+        }
+        
+        /* 그라데이션 배경 */
+        .gradient-bg {
+            background: linear-gradient(135deg, #F8FAFC 0%, #F0F4F1 100%);
+        }
+        
+        /* 슬라이더 커스텀 스타일 */
+        .slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: linear-gradient(45deg, #65806F, #8B7D6B);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+        
+        .slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: linear-gradient(45deg, #65806F, #8B7D6B);
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+        
+        /* 펄스 애니메이션 */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        
+        /* 스크롤바 스타일링 */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(45deg, #65806F, #8B7D6B);
+            border-radius: 4px;
+        }
+    </style>
 </head>
-<body class="bg-gray-50">
+<body class="gradient-bg min-h-screen">
     <div id="root"></div>
-    <script type="text/babel" src="app.js"></script>
+    
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // Google Apps Script URL - 최종 연결 완료!
+        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyu9ZJznYRFk8PR2GYIKJVnMlgwjENq_Nv_h7Kgtaa-5EtVQElkBpTd2NNObl7iaj21/exec';
+
+        const SimpleCuppingForm = () => {
+            // 상태 관리
+            const initialFormData = {
+                roastingDate: '', cuppingDate: '', userId: '', coffeeName: '', dropTime: '', agtronNumber: ''
+            };
+            const initialScores = { aroma: 8, acidity: 8, sweetness: 8, body: 8, aftertaste: 8 };
+            const initialCustomNotes = { 꽃: '', 과일류: '', 허브: '', 견과류: '', 캐러멜: '', 초콜릿: '', 디펙트: '' };
+
+            const [formData, setFormData] = useState(initialFormData);
+            const [scores, setScores] = useState(initialScores);
+            const [selectedAromas, setSelectedAromas] = useState([]);
+            const [expandedCategory, setExpandedCategory] = useState(null);
+            const [notes, setNotes] = useState('');
+            const [customNotes, setCustomNotes] = useState(initialCustomNotes);
+            const [roastingNotes, setRoastingNotes] = useState('');
+
+            const [isSubmitting, setIsSubmitting] = useState(false);
+            const [statusMessage, setStatusMessage] = useState('');
+            const [showSummary, setShowSummary] = useState(false);
+            const [summaryData, setSummaryData] = useState(null);
+
+            const aromaWheel = {
+                '꽃': ['장미', '자스민', '라일락', '커피블라썸', '오렌지꽃'],
+                '과일류': ['감귤류(오렌지/레몬)', '베리류', '열대과일', '사과/배', '자두/체리'],
+                '허브': ['민트', '캐모마일', '라벤더', '로즈마리', '타임'],
+                '견과류': ['아몬드', '헤이즐넛', '피칸', '땅콩', '호두'],
+                '캐러멜': ['흑설탕', '버터스카치', '메이플시럽', '토피', '캔디'],
+                '초콜릿': ['다크초콜릿', '밀크초콜릿', '코코아', '초콜릿시럽', '모카'],
+                '디펙트': ['언더', '오버', '베이크드', '몰디', '메탈릭', '과발효']
+            };
+
+            const scoreLabels = { aroma: '향', acidity: '산미', sweetness: '단맛', body: '바디감', aftertaste: '후미' };
+            const scoreDescriptions = {
+                aroma: 'Fragrance(분쇄향) / Aroma(습식향)', 
+                acidity: '신맛의 정도와 특성',
+                sweetness: '자연스러운 단맛', 
+                body: '입안의 무게감/질감', 
+                aftertaste: '긍정적 맛/향의 지속성'
+            };
+
+            // 진행률 계산
+            const calculateProgress = () => {
+                let totalFields = 11; // 총 필드 수
+                let filledFields = 0;
+                
+                if (formData.roastingDate) filledFields++;
+                if (formData.cuppingDate) filledFields++;
+                if (formData.userId) filledFields++;
+                if (formData.coffeeName) filledFields++;
+                if (formData.dropTime) filledFields++;
+                if (formData.agtronNumber) filledFields++;
+                if (notes) filledFields++;
+                if (roastingNotes) filledFields++;
+                if (selectedAromas.length > 0) filledFields++;
+                if (Object.values(scores).some(score => score !== 8)) filledFields++;
+                if (Object.values(customNotes).some(note => note.trim())) filledFields++;
+                
+                return Math.round((filledFields / totalFields) * 100);
+            };
+
+            // 핸들러 함수들
+            const handleInputChange = (e) => {
+                const { name, value } = e.target;
+                setFormData(prev => ({ ...prev, [name]: value }));
+            };
+
+            const handleScoreChange = (category, value) => {
+                setScores(prev => ({ ...prev, [category]: parseInt(value) }));
+            };
+
+            const handleAromaSelect = (aroma) => {
+                setSelectedAromas(prev =>
+                    prev.includes(aroma) ? prev.filter(a => a !== aroma) : [...prev, aroma]
+                );
+            };
+
+            const handleCategoryClick = (category) => {
+                setExpandedCategory(expandedCategory === category ? null : category);
+            };
+
+            const handleCustomNotesChange = (category, value) => {
+                setCustomNotes(prev => ({ ...prev, [category]: value }));
+            };
+
+            // 추천 시스템 (15단계 기준)
+            const getRecommendation = () => {
+                let recommendations = [];
+                if (scores.acidity > 10) recommendations.push("산미 강함: 로스팅 온도 약간 상승 고려.");
+                if (scores.body < 6) recommendations.push("바디감 부족: 디벨롭 시간 증가 고려.");
+                if (scores.sweetness < 6) recommendations.push("단맛 부족: 첫 크랙 후 시간 증가 고려.");
+                if (scores.aroma < 6) recommendations.push("향 부족: 전개 시간 조정 고려.");
+                if (scores.aftertaste < 6) recommendations.push("후미 부족: 마무리 온도 조정 고려.");
+                return recommendations.length > 0 ? recommendations.join(' ') : "균형 잡힌 프로파일입니다.";
+            };
+
+            // 데이터 저장 함수
+            const handleSave = async () => {
+                if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL === '여기에_복사한_Apps_Script_웹_앱_URL_붙여넣기') {
+                    setStatusMessage('⚠️ Google Apps Script URL이 설정되지 않았습니다.');
+                    setShowSummary(false);
+                    return;
+                }
+                if (isSubmitting) return;
+
+                setIsSubmitting(true);
+                setStatusMessage('💾 저장 중...');
+                setShowSummary(false);
+
+                const recommendation = getRecommendation();
+                const currentCustomNotesString = JSON.stringify(customNotes);
+
+                const dataToSend = {
+                    roastingDate: formData.roastingDate,
+                    cuppingDate: formData.cuppingDate,
+                    userId: formData.userId,
+                    coffeeName: formData.coffeeName,
+                    dropTimeTemp: formData.dropTime,
+                    agtron: formData.agtronNumber,
+                    aromaScore: scores.aroma,
+                    acidityScore: scores.acidity,
+                    sweetnessScore: scores.sweetness,
+                    bodyScore: scores.body,
+                    aftertasteScore: scores.aftertaste,
+                    detectedFlavors: selectedAromas.join(', '),
+                    detailedAromaNotes: currentCustomNotesString,
+                    additionalNotes: notes,
+                    roastingNotes: roastingNotes,
+                    roastingRecommendation: recommendation
+                };
+
+                try {
+                    const response = await fetch(APPS_SCRIPT_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                        body: JSON.stringify(dataToSend)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`서버 응답 오류: ${response.status} ${response.statusText}`);
+                    }
+
+                    const result = await response.json();
+
+                    if (result.status === 'success') {
+                        setStatusMessage('✅ 성공적으로 저장되었습니다!');
+                        setSummaryData({
+                            ...formData,
+                            ...scores,
+                            selectedAromas: selectedAromas,
+                            notes: notes,
+                            customNotes: customNotes,
+                            roastingNotes: roastingNotes,
+                            recommendation: recommendation
+                        });
+                        setShowSummary(true);
+                    } else {
+                        setStatusMessage('❌ 저장 실패: ' + (result.message || '알 수 없는 오류가 발생했습니다.'));
+                        setShowSummary(false);
+                    }
+                } catch (error) {
+                    console.error('데이터 저장 중 오류 발생:', error);
+                    setStatusMessage(`❌ 오류 발생: ${error.message}`);
+                    setShowSummary(false);
+                } finally {
+                    setIsSubmitting(false);
+                }
+            };
+
+            // 폼 초기화
+            const resetForm = () => {
+                setFormData(initialFormData);
+                setScores(initialScores);
+                setSelectedAromas([]);
+                setExpandedCategory(null);
+                setNotes('');
+                setCustomNotes(initialCustomNotes);
+                setRoastingNotes('');
+                setShowSummary(false);
+                setStatusMessage('');
+            };
+
+            // 결과 요약 컴포넌트
+            const ResultSummary = ({ data }) => {
+                if (!data) return null;
+
+                return (
+                    <div className="mt-8 glass rounded-2xl p-6 slide-up border-l-4 border-sage-green">
+                        <h2 className="text-xl font-bold mb-4 text-sage-green flex items-center">
+                            <span className="mr-2">📋</span>
+                            저장된 결과 요약
+                        </h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                            <div className="space-y-2">
+                                <p><strong className="text-forest-green">로스팅 날짜:</strong> {data.roastingDate}</p>
+                                <p><strong className="text-forest-green">커핑 날짜:</strong> {data.cuppingDate}</p>
+                                <p><strong className="text-forest-green">이름/ID:</strong> {data.userId}</p>
+                                <p><strong className="text-forest-green">커피명:</strong> {data.coffeeName}</p>
+                                <p><strong className="text-forest-green">배출시간/온도:</strong> {data.dropTime}</p>
+                                <p><strong className="text-forest-green">Agtron#:</strong> {data.agtronNumber}</p>
+                            </div>
+                            
+                            <div>
+                                <h4 className="font-semibold text-forest-green mb-2">평가 점수 (15단계)</h4>
+                                <div className="space-y-1">
+                                    {Object.entries(scoreLabels).map(([key, label]) => (
+                                        <div key={key} className="flex justify-between">
+                                            <span>{label}:</span>
+                                            <span className="font-semibold text-sage-green">{data[key]}/15</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {data.selectedAromas && data.selectedAromas.length > 0 && (
+                            <div className="mt-4 pt-4 border-t">
+                                <h4 className="font-semibold text-forest-green mb-2">감지된 향미:</h4>
+                                <div className="flex flex-wrap gap-1">
+                                    {data.selectedAromas.map(aroma => (
+                                        <span key={aroma} className="px-2 py-1 bg-green-100 text-sage-green rounded-full text-xs">
+                                            {aroma}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                        
+                        {data.recommendation && (
+                            <div className="mt-4 pt-4 border-t bg-green-50 rounded-lg p-3">
+                                <h4 className="font-semibold text-forest-green mb-1">🎯 자동 추천:</h4>
+                                <p className="text-sm text-gray-700">{data.recommendation}</p>
+                            </div>
+                        )}
+                        
+                        <button
+                            onClick={() => setShowSummary(false)}
+                            className="mt-4 px-4 py-2 bg-sage-green text-white text-sm rounded-lg hover:bg-forest-green transition-colors"
+                        >
+                            요약 닫기
+                        </button>
+                    </div>
+                );
+            };
+
+            const progress = calculateProgress();
+
+            return (
+                <div className="container mx-auto px-4 py-8 max-w-6xl">
+                    
+                    {/* 헤더 with 진행률 */}
+                    <div className="glass rounded-2xl p-6 mb-8 fade-in card-hover">
+                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4">
+                            <h1 className="text-3xl font-bold text-gray-800 mb-2 md:mb-0">
+                                ☕ Simple Cupping Form
+                            </h1>
+                            <div className="text-sm text-gray-600 flex items-center">
+                                <span className="mr-2">진행률:</span>
+                                <span className="text-sage-green font-semibold text-lg">{progress}%</span>
+                            </div>
+                        </div>
+                        
+                        <div className="w-full bg-gray-200 rounded-full h-3">
+                            <div 
+                                className="bg-gradient-to-r from-sage-green to-forest-green h-3 rounded-full progress-fill transition-all duration-700" 
+                                style={{width: `${progress}%`}}
+                            ></div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                        
+                        {/* 기본 정보 */}
+                        <div className="lg:col-span-2 glass rounded-2xl p-6 slide-up card-hover" style={{animationDelay: '0.2s'}}>
+                            <div className="flex items-center mb-6">
+                                <div className="w-10 h-10 bg-sage-green rounded-xl flex items-center justify-center mr-3">
+                                    <span className="text-white text-lg">📋</span>
+                                </div>
+                                <h2 className="text-xl font-semibold text-gray-800">기본 정보</h2>
+                            </div>
+                            
+                            <div className="space-y-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">로스팅 날짜</label>
+                                        <input 
+                                            type="date" 
+                                            name="roastingDate"
+                                            value={formData.roastingDate}
+                                            onChange={handleInputChange}
+                                            className="w-full p-3 bg-white/50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sage-green transition-all duration-300"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">커핑 날짜</label>
+                                        <input 
+                                            type="date"
+                                            name="cuppingDate"
+                                            value={formData.cuppingDate}
+                                            onChange={handleInputChange}
+                                            className="w-full p-3 bg-white/50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sage-green transition-all duration-300"
+                                        />
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">이름 or ID</label>
+                                    <input 
+                                        type="text"
+                                        name="userId"
+                                        value={formData.userId}
+                                        onChange={handleInputChange}
+                                        placeholder="이름 또는 ID를 입력하세요"
+                                        className="w-full p-3 bg-white/50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sage-green transition-all duration-300"
+                                    />
+                                </div>
+                                
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">커피 정보</label>
+                                    <input 
+                                        type="text"
+                                        name="coffeeName"
+                                        value={formData.coffeeName}
+                                        onChange={handleInputChange}
+                                        placeholder="커피이름, 농장명, 프로세싱 등"
+                                        className="w-full p-3 bg-white/50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sage-green transition-all duration-300"
+                                    />
+                                </div>
+                                
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">배출시간과 온도</label>
+                                        <input 
+                                            type="text"
+                                            name="dropTime"
+                                            value={formData.dropTime}
+                                            onChange={handleInputChange}
+                                            placeholder="예: 12:30 / 204°C"
+                                            className="w-full p-3 bg-white/50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sage-green transition-all duration-300"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Agtron#</label>
+                                        <input 
+                                            type="text"
+                                            name="agtronNumber"
+                                            value={formData.agtronNumber}
+                                            onChange={handleInputChange}
+                                            placeholder="예: 65"
+                                            className="w-full p-3 bg-white/50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sage-green transition-all duration-300"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 실시간 점수 시각화 */}
+                        <div className="lg:col-span-2 glass-dark rounded-2xl p-6 slide-up card-hover" style={{animationDelay: '0.4s'}}>
+                            <div className="flex items-center mb-6">
+                                <div className="w-10 h-10 bg-forest-green rounded-xl flex items-center justify-center mr-3">
+                                    <span className="text-white text-lg">📊</span>
+                                </div>
+                                <h3 className="text-xl font-semibold text-gray-800">실시간 평가</h3>
+                            </div>
+                            
+                            <div className="space-y-4">
+                                {Object.entries(scores).map(([category, value]) => (
+                                    <div key={category}>
+                                        <div className="flex justify-between mb-2">
+                                            <span className="text-sm font-medium text-gray-700">{scoreLabels[category]}</span>
+                                            <span className="text-sm font-bold text-sage-green">{value}/15</span>
+                                        </div>
+                                        <div className="w-full bg-gray-200 rounded-full h-3">
+                                            <div 
+                                                className="bg-gradient-to-r from-sage-green to-forest-green h-3 rounded-full score-bar transition-all duration-500" 
+                                                style={{width: `${(value/15)*100}%`}}
+                                            ></div>
+                                        </div>
+                                    </div>
+                                ))}
+                                
+                                <div className="mt-6 p-4 bg-green-50 rounded-xl">
+                                    <div className="text-sm text-gray-600">
+                                        <p className="font-medium text-forest-green mb-1">현재 평균 점수</p>
+                                        <p className="text-lg font-bold text-sage-green">
+                                            {(Object.values(scores).reduce((a,b) => a+b, 0) / 5).toFixed(1)} / 15
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* 평가 항목 (15단계) */}
+                    <div className="glass rounded-2xl p-6 mt-6 slide-up card-hover" style={{animationDelay: '0.6s'}}>
+                        <div className="flex items-center mb-6">
+                            <div className="w-10 h-10 bg-sage-green rounded-xl flex items-center justify-center mr-3">
+                                <span className="text-white text-lg">⭐</span>
+                            </div>
+                            <h2 className="text-xl font-semibold text-gray-800">평가 항목 (15단계)</h2>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            {Object.entries(scores).map(([category, value]) => (
+                                <div key={category} className="space-y-3">
+                                    <div className="flex justify-between items-center">
+                                        <label className="text-lg font-medium text-gray-800">
+                                            {scoreLabels[category]}
+                                        </label>
+                                        <span className="text-2xl font-bold text-sage-green">{value}</span>
+                                    </div>
+                                    <p className="text-sm text-gray-500 mb-3">{scoreDescriptions[category]}</p>
+                                    <input 
+                                        type="range" 
+                                        min="1" 
+                                        max="15" 
+                                        value={value} 
+                                        onChange={(e) => handleScoreChange(category, e.target.value)}
+                                        className="w-full h-3 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                                    />
+                                    <div className="flex justify-between text-xs text-gray-500">
+                                        <span>1 (매우 약함)</span>
+                                        <span>8 (보통)</span>
+                                        <span>15 (매우 강함)</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* 향미 휠 */}
+                    <div className="glass rounded-2xl p-6 mt-6 slide-up card-hover" style={{animationDelay: '0.8s'}}>
+                        <div className="flex items-center mb-6">
+                            <div className="w-10 h-10 bg-forest-green rounded-xl flex items-center justify-center mr-3">
+                                <span className="text-white text-lg">🌸</span>
+                            </div>
+                            <h2 className="text-xl font-semibold text-gray-800">향미 특성 (Aroma Wheel)</h2>
+                        </div>
+                        
+                        <div className="space-y-3">
+                            {Object.entries(aromaWheel).map(([category, aromas]) => (
+                                <div key={category} className="border border-gray-200 rounded-xl overflow-hidden">
+                                    <button 
+                                        onClick={() => handleCategoryClick(category)}
+                                        className="w-full text-left p-4 hover:bg-gray-50 focus:outline-none transition-colors duration-200 flex justify-between items-center"
+                                    >
+                                        <span className="font-medium text-gray-800">{category}</span>
+                                        <span className={`transform transition-transform duration-200 ${expandedCategory === category ? 'rotate-180' : ''}`}>
+                                            ▼
+                                        </span>
+                                    </button>
+                                    
+                                    {expandedCategory === category && (
+                                        <div className="p-4 bg-gray-50 border-t">
+                                            <div className="flex flex-wrap gap-2 mb-4">
+                                                {aromas.map(aroma => (
+                                                    <button 
+                                                        key={aroma}
+                                                        onClick={() => handleAromaSelect(aroma)}
+                                                        className={`px-3 py-2 rounded-full text-sm transition-all duration-300 ${
+                                                            selectedAromas.includes(aroma) 
+                                                                ? 'bg-sage-green text-white shadow-md' 
+                                                                : 'bg-white text-gray-700 border border-gray-300 hover:bg-sage-green hover:text-white'
+                                                        }`}
+                                                    >
+                                                        {aroma}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                            <textarea 
+                                                value={customNotes[category]}
+                                                onChange={(e) => handleCustomNotesChange(category, e.target.value)}
+                                                placeholder={`${category} 관련 상세 노트를 입력하세요...`}
+                                                className="w-full p-3 border border-gray-200 rounded-lg h-20 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-sage-green transition-all duration-300"
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* 선택된 향미 표시 */}
+                    {selectedAromas.length > 0 && (
+                        <div className="glass rounded-2xl p-6 mt-6 slide-up card-hover border-l-4 border-sage-green">
+                            <h3 className="text-lg font-semibold mb-4 text-gray-800 flex items-center">
+                                <span className="mr-2">🎯</span>
+                                감지된 주요 향미 ({selectedAromas.length}개)
+                            </h3>
+                            <div className="flex flex-wrap gap-2">
+                                {selectedAromas.map(aroma => (
+                                    <span 
+                                        key={aroma} 
+                                        className="px-3 py-2 bg-green-100 text-sage-green rounded-full text-sm font-medium border border-green-200"
+                                    >
+                                        {aroma}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* 메모 섹션 */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                        <div className="glass rounded-2xl p-6 slide-up card-hover" style={{animationDelay: '1s'}}>
+                            <div className="flex items-center mb-4">
+                                <div className="w-8 h-8 bg-sage-green rounded-lg flex items-center justify-center mr-3">
+                                    <span className="text-white text-sm">📝</span>
+                                </div>
+                                <h2 className="text-lg font-semibold text-gray-800">추가 메모</h2>
+                            </div>
+                            <textarea 
+                                value={notes}
+                                onChange={(e) => setNotes(e.target.value)}
+                                placeholder="전체적인 인상, 질감, 밸런스 등을 자유롭게 기록해주세요..."
+                                className="w-full h-32 p-3 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-sage-green transition-all duration-300"
+                            />
+                        </div>
+
+                        <div className="glass rounded-2xl p-6 slide-up card-hover" style={{animationDelay: '1.2s'}}>
+                            <div className="flex items-center mb-4">
+                                <div className="w-8 h-8 bg-forest-green rounded-lg flex items-center justify-center mr-3">
+                                    <span className="text-white text-sm">🔥</span>
+                                </div>
+                                <h2 className="text-lg font-semibold text-gray-800">로스팅 노트</h2>
+                            </div>
+                            <textarea 
+                                value={roastingNotes}
+                                onChange={(e) => setRoastingNotes(e.target.value)}
+                                placeholder="로스팅 프로파일, 특이사항, 개선 방향 등을 기록해주세요..."
+                                className="w-full h-32 p-3 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-sage-green transition-all duration-300"
+                            />
+                        </div>
+                    </div>
+
+                    {/* 자동 추천 시스템 */}
+                    <div className="glass rounded-2xl p-6 mt-6 slide-up card-hover bg-gradient-to-r from-green-50 to-blue-50" style={{animationDelay: '1.4s'}}>
+                        <div className="flex items-center mb-4">
+                            <div className="w-8 h-8 bg-warm-gray rounded-lg flex items-center justify-center mr-3">
+                                <span className="text-white text-sm">🤖</span>
+                            </div>
+                            <h2 className="text-lg font-semibold text-gray-800">AI 로스팅 추천</h2>
+                        </div>
+                        <div className="bg-white/70 rounded-lg p-4 border border-green-200">
+                            <p className="text-sm text-gray-700">
+                                <strong className="text-forest-green">현재 분석 결과:</strong> {getRecommendation()}
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* 저장 버튼 및 상태 */}
+                    <div className="mt-8 text-center slide-up" style={{animationDelay: '1.6s'}}>
+                        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                            <button
+                                onClick={handleSave}
+                                disabled={isSubmitting}
+                                className={`px-8 py-4 font-semibold rounded-2xl shadow-lg transition-all duration-300 transform ${
+                                    isSubmitting 
+                                        ? 'bg-gray-400 cursor-not-allowed' 
+                                        : 'bg-gradient-to-r from-sage-green to-forest-green text-white hover:shadow-xl hover:scale-105'
+                                }`}
+                            >
+                                {isSubmitting ? (
+                                    <span className="flex items-center">
+                                        <span className="animate-spin mr-2">⏳</span>
+                                        저장 중...
+                                    </span>
+                                ) : (
+                                    <span className="flex items-center">
+                                        <span className="mr-2">💾</span>
+                                        커핑 데이터 저장
+                                    </span>
+                                )}
+                            </button>
+                            
+                            <button
+                                onClick={resetForm}
+                                className="px-6 py-3 bg-gray-500 text-white font-medium rounded-xl hover:bg-gray-600 transition-colors duration-300"
+                            >
+                                🔄 폼 초기화
+                            </button>
+                        </div>
+                        
+                        {statusMessage && (
+                            <div className={`mt-4 p-3 rounded-lg text-sm ${
+                                statusMessage.includes('성공') 
+                                    ? 'bg-green-100 text-green-700 border border-green-200' 
+                                    : statusMessage.includes('오류') || statusMessage.includes('실패')
+                                    ? 'bg-red-100 text-red-700 border border-red-200'
+                                    : 'bg-blue-100 text-blue-700 border border-blue-200'
+                            }`}>
+                                {statusMessage}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* 결과 요약 */}
+                    {showSummary && <ResultSummary data={summaryData} />}
+
+                </div>
+            );
+        };
+
+        // React 앱 렌더링
+        const rootElement = document.getElementById('root');
+        if (rootElement) {
+            const root = ReactDOM.createRoot(rootElement);
+            root.render(<SimpleCuppingForm />);
+        } else {
+            console.error("Root element with id 'root' not found.");
+        }
+    </script>
 </body>
 </html>
