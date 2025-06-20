@@ -500,7 +500,7 @@
                                 {Object.entries(scores).map(([category, value]) => (
                                     <div key={category}>
                                         <div className="flex justify-between mb-2">
-                                            <span className="text-sm font-medium text-gray-700">{scoreLabels[category]}</span>
+                                            <span className="text-sm font-medium text-gray-800">{scoreLabels[category]}</span>
                                             <span className="text-sm font-bold text-sage-green">{value}/15</span>
                                         </div>
                                         <div className="w-full bg-gray-200 rounded-full h-3">
@@ -513,7 +513,7 @@
                                 ))}
                                 
                                 <div className="mt-6 p-4 bg-green-50 rounded-xl">
-                                    <div className="text-sm text-gray-600">
+                                    <div className="text-sm text-gray-800">
                                         <p className="font-medium text-forest-green mb-1">현재 평균 점수</p>
                                         <p className="text-lg font-bold text-sage-green">
                                             {(Object.values(scores).reduce((a,b) => a+b, 0) / 5).toFixed(1)} / 15
@@ -542,7 +542,7 @@
                                         </label>
                                         <span className="text-2xl font-bold text-sage-green">{value}</span>
                                     </div>
-                                    <p className="text-sm text-gray-500 mb-3">{scoreDescriptions[category]}</p>
+                                    <p className="text-sm text-gray-600 mb-3">{scoreDescriptions[category]}</p>
                                     <input 
                                         type="range" 
                                         min="1" 
@@ -551,7 +551,7 @@
                                         onChange={(e) => handleScoreChange(category, e.target.value)}
                                         className="w-full h-3 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
                                     />
-                                    <div className="flex justify-between text-xs text-gray-500">
+                                    <div className="flex justify-between text-xs text-gray-600">
                                         <span>1 (매우 약함)</span>
                                         <span>8 (보통)</span>
                                         <span>15 (매우 강함)</span>
@@ -675,7 +675,7 @@
                             <h2 className="text-lg font-semibold text-gray-800">AI 로스팅 추천</h2>
                         </div>
                         <div className="bg-white/70 rounded-lg p-4 border border-green-200">
-                            <p className="text-sm text-gray-700">
+                            <p className="text-sm text-gray-800">
                                 <strong className="text-forest-green">현재 분석 결과:</strong> {getRecommendation()}
                             </p>
                         </div>
