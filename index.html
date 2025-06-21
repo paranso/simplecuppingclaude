@@ -2,75 +2,32 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Simple Cupping Form</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* 안드로이드 브라우저 호환성 개선 - 강력한 버전 */
+        /* 안드로이드 브라우저 호환성 개선 */
         input[type="date"] {
             text-align: center !important;
-            -webkit-appearance: none !important;
-            -moz-appearance: none !important;
-            appearance: none !important;
-            -webkit-text-align: center !important;
-            direction: ltr !important;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
         }
         
-        input[type="date"]::-webkit-datetime-edit {
-            text-align: center !important;
-            -webkit-text-align: center !important;
-        }
-        
-        input[type="date"]::-webkit-datetime-edit-fields-wrapper {
-            text-align: center !important;
-            -webkit-text-align: center !important;
-        }
-        
-        /* 안드로이드 포커스 문제 강력한 해결 */
-        input, textarea, button {
-            -webkit-user-select: none;
-            -webkit-touch-callout: none;
-            -webkit-tap-highlight-color: transparent;
-        }
-        
-        input:focus, textarea:focus, button:focus {
-            outline: none !important;
+        /* 안드로이드에서 input 포커스 문제 해결 */
+        input:focus {
+            outline: none;
             transform: none !important;
-            -webkit-transform: none !important;
-            position: relative !important;
         }
         
-        /* 스크롤 방지 - 강력한 버전 */
-        .prevent-scroll {
-            position: fixed !important;
-            width: 100% !important;
-        }
-        
-        /* 안드로이드 극단적 해결책 */
-        * {
-            -webkit-touch-callout: none !important;
-            -webkit-user-select: none !important;
-            -webkit-tap-highlight-color: transparent !important;
-        }
-        
-        input, textarea {
-            -webkit-user-select: text !important;
-        }
-        
-        /* 포커스 완전 방지 */
-        input:not([type="text"]):not([type="email"]):not([type="password"]):focus,
-        button:focus {
-            pointer-events: none !important;
-        }
-        
-        /* 스크롤 잠금 */
-        body.scroll-lock {
-            position: fixed !important;
-            width: 100% !important;
-            overflow: hidden !important;
+        /* 터치 디바이스에서 스크롤 방지 */
+        .no-scroll-on-focus input,
+        .no-scroll-on-focus button,
+        .no-scroll-on-focus textarea {
+            position: relative;
         }
         
         /* 글래스모피즘 효과 */
@@ -212,45 +169,18 @@
             const [showSummary, setShowSummary] = useState(false);
             const [summaryData, setSummaryData] = useState(null);
 
-            // 안드로이드 브라우저 호환성을 위한 useEffect - 강력한 버전
+            // 안드로이드 브라우저 호환성을 위한 useEffect
             useEffect(() => {
-                // 페이지 로드 시 모든 포커스 제거
-                const removeAllFocus = () => {
-                    if (document.activeElement && document.activeElement.blur) {
-                        document.activeElement.blur();
-                    }
-                    // 모든 input에서 포커스 제거
-                    const inputs = document.querySelectorAll('input, textarea');
-                    inputs.forEach(input => {
-                        if (input.blur) input.blur();
-                    });
-                };
+                // 페이지 로드 시 포커스 제거
+                if (document.activeElement && document.activeElement.blur) {
+                    document.activeElement.blur();
+                }
                 
-                removeAllFocus();
-                
-                // 스크롤 이벤트 방지 함수
-                const preventScroll = (e) => {
-                    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
-                        return;
-                    }
-                    e.preventDefault();
-                };
-                
-                // 터치 이벤트 리스너 추가
-                document.addEventListener('touchstart', preventScroll, { passive: false });
-                document.addEventListener('touchmove', preventScroll, { passive: false });
-                
-                // 입력 요소에 대한 특별 처리
-                const handleInputFocus = (e) => {
-                    setTimeout(() => {
-                        if (e.target.blur) e.target.blur();
-                    }, 100);
-                };
-                
-                return () => {
-                    document.removeEventListener('touchstart', preventScroll);
-                    document.removeEventListener('touchmove', preventScroll);
-                };
+                // 안드로이드에서 자동 줌 방지
+                const viewport = document.querySelector('meta[name=viewport]');
+                if (viewport) {
+                    viewport.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+                }
             }, []);
 
             const aromaWheel = {
@@ -289,30 +219,13 @@
             const handleAromaSelectWithScroll = (aroma, e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                e.stopImmediatePropagation();
-                
-                // 스크롤 위치 저장
-                const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-                const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
-                
                 setSelectedAromas(prev =>
                     prev.includes(aroma) ? prev.filter(a => a !== aroma) : [...prev, aroma]
                 );
-                
-                // 포커스 제거 및 스크롤 위치 복원
-                setTimeout(() => {
-                    if (e.target && e.target.blur) {
-                        e.target.blur();
-                    }
-                    // 모든 활성 요소에서 포커스 제거
-                    if (document.activeElement && document.activeElement.blur) {
-                        document.activeElement.blur();
-                    }
-                    // 스크롤 위치 복원
-                    window.scrollTo(scrollLeft, scrollTop);
-                }, 10);
-                
-                return false;
+                // 안드로이드에서 스크롤 방지
+                if (e.target && e.target.blur) {
+                    e.target.blur();
+                }
             };
 
             const handleCustomNotesChange = (category, value) => {
@@ -541,7 +454,7 @@
                     </div>
 
                     {/* 기본 정보 */}
-                    <div className="glass rounded-2xl p-6 mb-6 slide-up card-hover" style={{animationDelay: '0.2s'}}>
+                    <div className="glass rounded-2xl p-6 mb-6 slide-up card-hover no-scroll-on-focus" style={{animationDelay: '0.2s'}}>
                         <div className="flex items-center mb-6">
                             <div className="w-10 h-10 bg-sage-green rounded-xl flex items-center justify-center mr-3">
                                 <span className="text-white text-lg">📋</span>
@@ -580,8 +493,6 @@
                                     name="userId"
                                     value={formData.userId}
                                     onChange={handleInputChange}
-                                    onBlur={(e) => e.target.blur()}
-                                    onFocus={(e) => setTimeout(() => e.target.blur(), 100)}
                                     placeholder="이름 또는 ID를 입력하세요"
                                     autoComplete="off"
                                     className="w-full p-3 bg-white/50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sage-green transition-all duration-300"
@@ -693,13 +604,11 @@
                                                     <button 
                                                         key={aroma}
                                                         onClick={(e) => handleAromaSelectWithScroll(aroma, e)}
-                                                        onTouchStart={(e) => e.preventDefault()}
-                                                        className={`px-3 py-2 rounded-full text-sm transition-all duration-300 touchable ${
+                                                        className={`px-3 py-2 rounded-full text-sm transition-all duration-300 ${
                                                             selectedAromas.includes(aroma) 
                                                                 ? 'bg-sage-green text-white shadow-md' 
                                                                 : 'bg-white text-gray-700 border border-gray-300 hover:bg-sage-green hover:text-white'
                                                         }`}
-                                                        style={{touchAction: 'manipulation', userSelect: 'none'}}
                                                     >
                                                         {aroma}
                                                     </button>
