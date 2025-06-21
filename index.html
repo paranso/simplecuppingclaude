@@ -51,11 +51,6 @@
             to { opacity: 1; transform: translateY(0); }
         }
         
-        /* 진행률 바 애니메이션 */
-        .progress-fill {
-            transition: width 0.5s ease-in-out;
-        }
-        
         /* 호버 효과 */
         .card-hover {
             transition: all 0.3s ease;
@@ -172,26 +167,6 @@
                 aftertaste: '긍정적 맛/향의 지속성'
             };
 
-            // 진행률 계산
-            const calculateProgress = () => {
-                let totalFields = 11; // 총 필드 수
-                let filledFields = 0;
-                
-                if (formData.roastingDate) filledFields++;
-                if (formData.cuppingDate) filledFields++;
-                if (formData.userId) filledFields++;
-                if (formData.coffeeName) filledFields++;
-                if (formData.dropTime) filledFields++;
-                if (formData.agtronNumber) filledFields++;
-                if (notes) filledFields++;
-                if (roastingNotes) filledFields++;
-                if (selectedAromas.length > 0) filledFields++;
-                if (Object.values(scores).some(score => score !== 8)) filledFields++;
-                if (Object.values(customNotes).some(note => note.trim())) filledFields++;
-                
-                return Math.round((filledFields / totalFields) * 100);
-            };
-
             // 핸들러 함수들
             const handleInputChange = (e) => {
                 const { name, value } = e.target;
@@ -227,6 +202,40 @@
                 return recommendations.length > 0 ? recommendations.join(' ') : "균형 잡힌 프로파일입니다.";
             };
 
+            // 향미 데이터를 깔끔하게 포맷팅하는 함수
+            const formatAromaData = () => {
+                let aromaData = '';
+                let notesData = '';
+                
+                // 선택된 향미를 카테고리별로 분류
+                const categorizedAromas = {};
+                Object.keys(aromaWheel).forEach(category => {
+                    const categoryAromas = selectedAromas.filter(aroma => 
+                        aromaWheel[category].includes(aroma)
+                    );
+                    if (categoryAromas.length > 0) {
+                        categorizedAromas[category] = categoryAromas;
+                    }
+                });
+                
+                // 선택된 향미 포맷팅
+                Object.entries(categorizedAromas).forEach(([category, aromas]) => {
+                    aromaData += `[${category}] ${aromas.join(', ')}\n`;
+                });
+                
+                // 카테고리별 메모 포맷팅
+                Object.entries(customNotes).forEach(([category, note]) => {
+                    if (note.trim()) {
+                        notesData += `[${category}] ${note.trim()}\n`;
+                    }
+                });
+                
+                return {
+                    formattedAromas: aromaData.trim(),
+                    formattedNotes: notesData.trim()
+                };
+            };
+
             // 데이터 저장 함수
             const handleSave = async () => {
                 if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL === '여기에_복사한_Apps_Script_웹_앱_URL_붙여넣기') {
@@ -241,7 +250,7 @@
                 setShowSummary(false);
 
                 const recommendation = getRecommendation();
-                const currentCustomNotesString = JSON.stringify(customNotes);
+                const { formattedAromas, formattedNotes } = formatAromaData();
 
                 const dataToSend = {
                     roastingDate: formData.roastingDate,
@@ -255,8 +264,8 @@
                     sweetnessScore: scores.sweetness,
                     bodyScore: scores.body,
                     aftertasteScore: scores.aftertaste,
-                    detectedFlavors: selectedAromas.join(', '),
-                    detailedAromaNotes: currentCustomNotesString,
+                    detectedFlavors: formattedAromas,
+                    detailedAromaNotes: formattedNotes,
                     additionalNotes: notes,
                     roastingNotes: roastingNotes,
                     roastingRecommendation: recommendation
@@ -359,6 +368,23 @@
                             </div>
                         )}
                         
+                        {(data.notes || data.roastingNotes) && (
+                            <div className="mt-4 pt-4 border-t">
+                                {data.notes && (
+                                    <div className="mb-3">
+                                        <h4 className="font-semibold text-forest-green mb-2">📝 추가 메모:</h4>
+                                        <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded-lg">{data.notes}</p>
+                                    </div>
+                                )}
+                                {data.roastingNotes && (
+                                    <div>
+                                        <h4 className="font-semibold text-forest-green mb-2">🔥 로스팅 노트:</h4>
+                                        <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded-lg">{data.roastingNotes}</p>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                        
                         {data.recommendation && (
                             <div className="mt-4 pt-4 border-t bg-green-50 rounded-lg p-3">
                                 <h4 className="font-semibold text-forest-green mb-1">🎯 자동 추천:</h4>
@@ -376,149 +402,95 @@
                 );
             };
 
-            const progress = calculateProgress();
-
             return (
                 <div className="container mx-auto px-4 py-8 max-w-6xl">
                     
-                    {/* 헤더 with 진행률 */}
+                    {/* 헤더 */}
                     <div className="glass rounded-2xl p-6 mb-8 fade-in card-hover">
-                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4">
-                            <h1 className="text-3xl font-bold text-gray-800 mb-2 md:mb-0">
-                                ☕ Simple Cupping Form
-                            </h1>
-                            <div className="text-sm text-gray-600 flex items-center">
-                                <span className="mr-2">진행률:</span>
-                                <span className="text-sage-green font-semibold text-lg">{progress}%</span>
-                            </div>
-                        </div>
-                        
-                        <div className="w-full bg-gray-200 rounded-full h-3">
-                            <div 
-                                className="bg-gradient-to-r from-sage-green to-forest-green h-3 rounded-full progress-fill transition-all duration-700" 
-                                style={{width: `${progress}%`}}
-                            ></div>
-                        </div>
+                        <h1 className="text-2xl md:text-3xl font-bold text-gray-800 text-center">
+                            Simple Cupping Form
+                        </h1>
                     </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                        
-                        {/* 기본 정보 */}
-                        <div className="lg:col-span-2 glass rounded-2xl p-6 slide-up card-hover" style={{animationDelay: '0.2s'}}>
-                            <div className="flex items-center mb-6">
-                                <div className="w-10 h-10 bg-sage-green rounded-xl flex items-center justify-center mr-3">
-                                    <span className="text-white text-lg">📋</span>
-                                </div>
-                                <h2 className="text-xl font-semibold text-gray-800">기본 정보</h2>
+                    {/* 기본 정보 */}
+                    <div className="glass rounded-2xl p-6 mb-6 slide-up card-hover" style={{animationDelay: '0.2s'}}>
+                        <div className="flex items-center mb-6">
+                            <div className="w-10 h-10 bg-sage-green rounded-xl flex items-center justify-center mr-3">
+                                <span className="text-white text-lg">📋</span>
                             </div>
-                            
-                            <div className="space-y-4">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">로스팅 날짜</label>
-                                        <input 
-                                            type="date" 
-                                            name="roastingDate"
-                                            value={formData.roastingDate}
-                                            onChange={handleInputChange}
-                                            className="w-full p-3 bg-white/50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sage-green transition-all duration-300"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">커핑 날짜</label>
-                                        <input 
-                                            type="date"
-                                            name="cuppingDate"
-                                            value={formData.cuppingDate}
-                                            onChange={handleInputChange}
-                                            className="w-full p-3 bg-white/50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sage-green transition-all duration-300"
-                                        />
-                                    </div>
-                                </div>
-                                
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">이름 or ID</label>
-                                    <input 
-                                        type="text"
-                                        name="userId"
-                                        value={formData.userId}
-                                        onChange={handleInputChange}
-                                        placeholder="이름 또는 ID를 입력하세요"
-                                        className="w-full p-3 bg-white/50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sage-green transition-all duration-300"
-                                    />
-                                </div>
-                                
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">커피 정보</label>
-                                    <input 
-                                        type="text"
-                                        name="coffeeName"
-                                        value={formData.coffeeName}
-                                        onChange={handleInputChange}
-                                        placeholder="커피이름, 농장명, 프로세싱 등"
-                                        className="w-full p-3 bg-white/50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sage-green transition-all duration-300"
-                                    />
-                                </div>
-                                
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">배출시간과 온도</label>
-                                        <input 
-                                            type="text"
-                                            name="dropTime"
-                                            value={formData.dropTime}
-                                            onChange={handleInputChange}
-                                            placeholder="예: 12:30 / 204°C"
-                                            className="w-full p-3 bg-white/50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sage-green transition-all duration-300"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">Agtron#</label>
-                                        <input 
-                                            type="text"
-                                            name="agtronNumber"
-                                            value={formData.agtronNumber}
-                                            onChange={handleInputChange}
-                                            placeholder="예: 65"
-                                            className="w-full p-3 bg-white/50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sage-green transition-all duration-300"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
+                            <h2 className="text-xl font-semibold text-gray-800">기본 정보</h2>
                         </div>
-
-                        {/* 실시간 점수 시각화 */}
-                        <div className="lg:col-span-2 glass-dark rounded-2xl p-6 slide-up card-hover" style={{animationDelay: '0.4s'}}>
-                            <div className="flex items-center mb-6">
-                                <div className="w-10 h-10 bg-forest-green rounded-xl flex items-center justify-center mr-3">
-                                    <span className="text-white text-lg">📊</span>
+                        
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">로스팅 날짜</label>
+                                    <input 
+                                        type="date" 
+                                        name="roastingDate"
+                                        value={formData.roastingDate}
+                                        onChange={handleInputChange}
+                                        className="w-full p-3 bg-white/50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sage-green transition-all duration-300"
+                                    />
                                 </div>
-                                <h3 className="text-xl font-semibold text-gray-800">실시간 평가</h3>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">커핑 날짜</label>
+                                    <input 
+                                        type="date"
+                                        name="cuppingDate"
+                                        value={formData.cuppingDate}
+                                        onChange={handleInputChange}
+                                        className="w-full p-3 bg-white/50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sage-green transition-all duration-300"
+                                    />
+                                </div>
                             </div>
                             
-                            <div className="space-y-4">
-                                {Object.entries(scores).map(([category, value]) => (
-                                    <div key={category}>
-                                        <div className="flex justify-between mb-2">
-                                            <span className="text-sm font-medium text-gray-800">{scoreLabels[category]}</span>
-                                            <span className="text-sm font-bold text-sage-green">{value}/15</span>
-                                        </div>
-                                        <div className="w-full bg-gray-200 rounded-full h-3">
-                                            <div 
-                                                className="bg-gradient-to-r from-sage-green to-forest-green h-3 rounded-full score-bar transition-all duration-500" 
-                                                style={{width: `${(value/15)*100}%`}}
-                                            ></div>
-                                        </div>
-                                    </div>
-                                ))}
-                                
-                                <div className="mt-6 p-4 bg-green-50 rounded-xl">
-                                    <div className="text-sm text-gray-800">
-                                        <p className="font-medium text-forest-green mb-1">현재 평균 점수</p>
-                                        <p className="text-lg font-bold text-sage-green">
-                                            {(Object.values(scores).reduce((a,b) => a+b, 0) / 5).toFixed(1)} / 15
-                                        </p>
-                                    </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">이름 or ID</label>
+                                <input 
+                                    type="text"
+                                    name="userId"
+                                    value={formData.userId}
+                                    onChange={handleInputChange}
+                                    placeholder="이름 또는 ID를 입력하세요"
+                                    className="w-full p-3 bg-white/50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sage-green transition-all duration-300"
+                                />
+                            </div>
+                            
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">커피 정보</label>
+                                <input 
+                                    type="text"
+                                    name="coffeeName"
+                                    value={formData.coffeeName}
+                                    onChange={handleInputChange}
+                                    placeholder="커피이름, 농장명, 프로세싱 등"
+                                    className="w-full p-3 bg-white/50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sage-green transition-all duration-300"
+                                />
+                            </div>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">배출시간과 온도</label>
+                                    <input 
+                                        type="text"
+                                        name="dropTime"
+                                        value={formData.dropTime}
+                                        onChange={handleInputChange}
+                                        placeholder="예: 12:30 / 204°C"
+                                        className="w-full p-3 bg-white/50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sage-green transition-all duration-300"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Agtron#</label>
+                                    <input 
+                                        type="text"
+                                        name="agtronNumber"
+                                        value={formData.agtronNumber}
+                                        onChange={handleInputChange}
+                                        placeholder="예: 65"
+                                        className="w-full p-3 bg-white/50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sage-green transition-all duration-300"
+                                    />
                                 </div>
                             </div>
                         </div>
