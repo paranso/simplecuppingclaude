@@ -213,18 +213,19 @@
 
                 // 터치/클릭 이벤트에서 포커스 제거
                 const handleInteraction = (e) => {
-                    // 슬라이더나 버튼 클릭 시
+                    // 슬라이더나 버튼 클릭 시에만 포커스 해제 (입력 필드 클릭 시에는 유지)
                     if (e.target.type === 'range' || e.target.tagName === 'BUTTON') {
                         setTimeout(forcedBlur, 50);
                     }
+                    // 입력 필드나 텍스트 영역을 클릭할 때는 포커스 유지
                 };
 
-                // 스크롤 이벤트 방지
+                // 스크롤 이벤트 방지 (더 정교하게)
                 const preventScroll = (e) => {
-                    // 입력 필드가 포커스된 상태에서 다른 요소 조작 시 스크롤 방지
+                    // 슬라이더나 버튼을 조작할 때만 입력 필드 포커스 해제
                     if (document.activeElement && 
                         (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') &&
-                        e.target !== document.activeElement) {
+                        (e.target.type === 'range' || e.target.tagName === 'BUTTON')) {
                         e.preventDefault();
                         forcedBlur();
                     }
@@ -266,13 +267,7 @@
             const handleInputChange = (e) => {
                 const { name, value } = e.target;
                 setFormData(prev => ({ ...prev, [name]: value }));
-                
-                // 입력 완료 후 일정 시간 뒤 포커스 해제 (안드로이드 대응)
-                setTimeout(() => {
-                    if (e.target && e.target.blur) {
-                        e.target.blur();
-                    }
-                }, 100);
+                // 입력 중에는 포커스를 유지해야 키보드가 사라지지 않음
             };
 
             const handleScoreChange = (category, value) => {
@@ -713,10 +708,6 @@
                                             <textarea 
                                                 value={customNotes[category]}
                                                 onChange={(e) => handleCustomNotesChange(category, e.target.value)}
-                                                onBlur={(e) => {
-                                                    // 텍스트 영역에서 포커스 해제될 때 추가 처리
-                                                    setTimeout(() => e.target.blur(), 50);
-                                                }}
                                                 placeholder={`${category} 관련 상세 노트를 입력하세요...`}
                                                 className="w-full p-3 border border-gray-200 rounded-lg h-20 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-sage-green transition-all duration-300"
                                             />
@@ -759,10 +750,6 @@
                             <textarea 
                                 value={notes}
                                 onChange={(e) => setNotes(e.target.value)}
-                                onBlur={(e) => {
-                                    // 텍스트 영역에서 포커스 해제될 때 추가 처리
-                                    setTimeout(() => e.target.blur(), 50);
-                                }}
                                 placeholder="전체적인 인상, 질감, 밸런스 등을 자유롭게 기록해주세요..."
                                 className="w-full h-32 p-3 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-sage-green transition-all duration-300"
                             />
@@ -778,10 +765,6 @@
                             <textarea 
                                 value={roastingNotes}
                                 onChange={(e) => setRoastingNotes(e.target.value)}
-                                onBlur={(e) => {
-                                    // 텍스트 영역에서 포커스 해제될 때 추가 처리
-                                    setTimeout(() => e.target.blur(), 50);
-                                }}
                                 placeholder="로스팅 프로파일, 특이사항, 개선 방향 등을 기록해주세요..."
                                 className="w-full h-32 p-3 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-sage-green transition-all duration-300"
                             />
