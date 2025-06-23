@@ -494,6 +494,21 @@
                                 </div>
                             </div>
                         )}
+
+                        {data.customNotes && Object.entries(data.customNotes).some(([_, note]) => note.trim()) && (
+                            <div className="mt-4 pt-4 border-t">
+                                <h4 className="font-semibold text-forest-green mb-2">🌸 향미 상세 노트:</h4>
+                                <div className="space-y-2">
+                                    {Object.entries(data.customNotes).map(([category, note]) => (
+                                        note.trim() && (
+                                            <div key={category} className="bg-gray-50 p-2 rounded text-xs">
+                                                <span className="font-medium text-sage-green">[{category}]</span> {note.trim()}
+                                            </div>
+                                        )
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                         
                         {(data.notes || data.roastingNotes) && (
                             <div className="mt-4 pt-4 border-t">
