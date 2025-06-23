@@ -1,0 +1,10 @@
+/* Android 브라우저에서 포커스 시 자동 스크롤 방지 */
+html, body {
+  /* 스크롤 체이닝(overscroll) 방지 */
+  overscroll-behavior-y: contain;
+}
+
+body {
+  /* 스크롤 앵커링(scroll anchoring) 해제 */
+  overflow-anchor: none;
+}
