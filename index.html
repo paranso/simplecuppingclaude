@@ -1,147 +1,30 @@
-<!DOCTYPE html>
+
+    <!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Simple Cupping Form</title>
+
+    <!-- React·Tailwind 등 기존 의존성들 -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- 추가한 CSS: Android 포커스 스크롤 방지 -->
+    <link rel="stylesheet" href="fix-android-focus.css">
+    
+    <!-- (기존에 <style> 안에 있던 기타 스타일들은 그대로 두셔도 되고,
+         꼭 원치 않으시면 삭제하셔도 됩니다.) -->
     <style>
-        /* 안드로이드 브라우저 호환성 개선 */
-        input[type="date"] {
-            text-align: center !important;
-            -webkit-appearance: none;
-            -moz-appearance: none;
-            appearance: none;
-        }
-        
-        /* 안드로이드에서 input 포커스 문제 해결 */
-        input:focus {
-            outline: none;
-            transform: none !important;
-        }
-        
-        /* 터치 디바이스에서 스크롤 방지 */
-        .no-scroll-on-focus input,
-        .no-scroll-on-focus button,
-        .no-scroll-on-focus textarea {
-            position: relative;
-        }
-        
-        /* 글래스모피즘 효과 */
-        .glass {
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        
-        .glass-dark {
-            background: rgba(101, 128, 111, 0.08);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(101, 128, 111, 0.15);
-        }
-        
-        /* 세련된 그린 색상 팔레트 */
-        .bg-sage-green { background-color: #65806F; }
-        .bg-forest-green { background-color: #52796F; }
-        .bg-warm-gray { background-color: #8B7D6B; }
-        .text-sage-green { color: #65806F; }
-        .text-forest-green { color: #52796F; }
-        .text-warm-gray { color: #8B7D6B; }
-        
-        /* 애니메이션 */
-        .fade-in {
-            animation: fadeIn 0.6s ease-out forwards;
-            opacity: 0;
-        }
-        
-        .slide-up {
-            animation: slideUp 0.8s ease-out forwards;
-            opacity: 0;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        /* 호버 효과 */
-        .card-hover {
-            transition: all 0.3s ease;
-        }
-        
-        .card-hover:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-        }
-        
-        /* 점수 시각화 */
-        .score-bar {
-            transition: width 0.8s ease-out;
-        }
-        
-        /* 그라데이션 배경 */
-        .gradient-bg {
-            background: linear-gradient(135deg, #F8FAFC 0%, #F0F4F1 100%);
-        }
-        
-        /* 슬라이더 커스텀 스타일 */
-        .slider::-webkit-slider-thumb {
-            appearance: none;
-            width: 20px;
-            height: 20px;
-            background: linear-gradient(45deg, #65806F, #8B7D6B);
-            border-radius: 50%;
-            cursor: pointer;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-        }
-        
-        .slider::-moz-range-thumb {
-            width: 20px;
-            height: 20px;
-            background: linear-gradient(45deg, #65806F, #8B7D6B);
-            border-radius: 50%;
-            cursor: pointer;
-            border: none;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-        }
-        
-        /* 펄스 애니메이션 */
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-        
-        .pulse {
-            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
-        
-        /* 스크롤바 스타일링 */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        
-        ::-webkit-scrollbar-track {
-            background: #f1f5f9;
-            border-radius: 4px;
-        }
-        
-        ::-webkit-scrollbar-thumb {
-            background: linear-gradient(45deg, #65806F, #8B7D6B);
-            border-radius: 4px;
-        }
+        /* …기존 글래스모피즘, 슬라이더 커스텀, 그라데이션 등 모든 스타일… */
     </style>
 </head>
 <body class="gradient-bg min-h-screen">
     <div id="root"></div>
-    
+
+    <script type="text/babel">
     <script type="text/babel">
         const { useState, useEffect } = React;
 
