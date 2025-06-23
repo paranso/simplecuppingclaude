@@ -128,6 +128,31 @@
                 scroll-behavior: auto;
                 overscroll-behavior: contain;
             }
+
+            /* 안드로이드에서 입력 필드 포커스 시 스크롤 완전 방지 */
+            input:focus, textarea:focus {
+                transform: translateZ(0);
+                scroll-behavior: auto;
+            }
+
+            /* 슬라이더 조작 시 다른 요소의 포커스 해제 */
+            input[type="range"]:active ~ *,
+            input[type="range"]:focus ~ * {
+                pointer-events: none;
+            }
+        }
+
+        /* 강력한 스크롤 방지 */
+        .prevent-scroll {
+            overflow: hidden !important;
+            position: fixed !important;
+            width: 100% !important;
+        }
+
+        /* 입력 필드 포커스 시 스크롤 방지 */
+        input:focus, textarea:focus {
+            scroll-margin: 0;
+            scroll-snap-align: none;
         }
     </style>
 </head>
@@ -178,6 +203,44 @@
                 if (CSS.supports('overflow-anchor', 'none')) {
                     document.body.style.overflowAnchor = 'none';
                 }
+
+                // 강력한 포커스 제거 함수
+                const forcedBlur = () => {
+                    if (document.activeElement && document.activeElement !== document.body) {
+                        document.activeElement.blur();
+                    }
+                };
+
+                // 터치/클릭 이벤트에서 포커스 제거
+                const handleInteraction = (e) => {
+                    // 슬라이더나 버튼 클릭 시
+                    if (e.target.type === 'range' || e.target.tagName === 'BUTTON') {
+                        setTimeout(forcedBlur, 50);
+                    }
+                };
+
+                // 스크롤 이벤트 방지
+                const preventScroll = (e) => {
+                    // 입력 필드가 포커스된 상태에서 다른 요소 조작 시 스크롤 방지
+                    if (document.activeElement && 
+                        (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') &&
+                        e.target !== document.activeElement) {
+                        e.preventDefault();
+                        forcedBlur();
+                    }
+                };
+
+                // 이벤트 리스너 등록
+                document.addEventListener('touchstart', handleInteraction, { passive: true });
+                document.addEventListener('click', handleInteraction, { passive: true });
+                document.addEventListener('touchmove', preventScroll, { passive: false });
+
+                // cleanup
+                return () => {
+                    document.removeEventListener('touchstart', handleInteraction);
+                    document.removeEventListener('click', handleInteraction);
+                    document.removeEventListener('touchmove', preventScroll);
+                };
             }, []);
 
             const aromaWheel = {
@@ -203,26 +266,69 @@
             const handleInputChange = (e) => {
                 const { name, value } = e.target;
                 setFormData(prev => ({ ...prev, [name]: value }));
+                
+                // 입력 완료 후 일정 시간 뒤 포커스 해제 (안드로이드 대응)
+                setTimeout(() => {
+                    if (e.target && e.target.blur) {
+                        e.target.blur();
+                    }
+                }, 100);
             };
 
             const handleScoreChange = (category, value) => {
                 setScores(prev => ({ ...prev, [category]: parseInt(value) }));
+                
+                // 안드로이드에서 슬라이더 조작 후 강제 포커스 해제
+                setTimeout(() => {
+                    if (document.activeElement && document.activeElement.blur) {
+                        document.activeElement.blur();
+                    }
+                    // 모든 입력 필드의 포커스 해제
+                    const inputs = document.querySelectorAll('input, textarea');
+                    inputs.forEach(input => {
+                        if (input.type !== 'range') {
+                            input.blur();
+                        }
+                    });
+                }, 10);
             };
 
             const handleCategoryClick = (category) => {
+                // 카테고리 클릭 시에도 모든 입력 필드 포커스 해제
+                document.querySelectorAll('input[type="text"], input[type="date"], textarea').forEach(input => input.blur());
+                
                 setExpandedCategory(expandedCategory === category ? null : category);
+                
+                // 추가 포커스 해제
+                setTimeout(() => {
+                    if (document.activeElement && document.activeElement !== document.body) {
+                        document.activeElement.blur();
+                    }
+                }, 10);
             };
 
             const handleAromaSelectWithScroll = (aroma, e) => {
                 e.preventDefault();
                 e.stopPropagation();
+                
+                // 먼저 모든 입력 필드의 포커스 해제
+                document.querySelectorAll('input[type="text"], input[type="date"], textarea').forEach(input => input.blur());
+                
                 setSelectedAromas(prev =>
                     prev.includes(aroma) ? prev.filter(a => a !== aroma) : [...prev, aroma]
                 );
+                
                 // 안드로이드에서 스크롤 방지
                 if (e.target && e.target.blur) {
                     setTimeout(() => e.target.blur(), 10);
                 }
+                
+                // 추가 포커스 해제
+                setTimeout(() => {
+                    if (document.activeElement && document.activeElement !== document.body) {
+                        document.activeElement.blur();
+                    }
+                }, 50);
             };
 
             const handleCustomNotesChange = (category, value) => {
@@ -560,6 +666,18 @@
                                         max="15" 
                                         value={value} 
                                         onChange={(e) => handleScoreChange(category, e.target.value)}
+                                        onTouchStart={(e) => {
+                                            // 터치 시작할 때 모든 입력 필드 포커스 해제
+                                            document.querySelectorAll('input[type="text"], input[type="date"], textarea').forEach(input => input.blur());
+                                        }}
+                                        onTouchEnd={(e) => {
+                                            // 터치 끝날 때 슬라이더 자체도 포커스 해제
+                                            setTimeout(() => e.target.blur(), 50);
+                                        }}
+                                        onMouseDown={(e) => {
+                                            // 마우스 클릭 시에도 동일하게 처리
+                                            document.querySelectorAll('input[type="text"], input[type="date"], textarea').forEach(input => input.blur());
+                                        }}
                                         className="w-full h-3 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
                                     />
                                     <div className="flex justify-between text-xs text-gray-600">
@@ -614,6 +732,10 @@
                                             <textarea 
                                                 value={customNotes[category]}
                                                 onChange={(e) => handleCustomNotesChange(category, e.target.value)}
+                                                onBlur={(e) => {
+                                                    // 텍스트 영역에서 포커스 해제될 때 추가 처리
+                                                    setTimeout(() => e.target.blur(), 50);
+                                                }}
                                                 placeholder={`${category} 관련 상세 노트를 입력하세요...`}
                                                 className="w-full p-3 border border-gray-200 rounded-lg h-20 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-sage-green transition-all duration-300"
                                             />
@@ -656,6 +778,10 @@
                             <textarea 
                                 value={notes}
                                 onChange={(e) => setNotes(e.target.value)}
+                                onBlur={(e) => {
+                                    // 텍스트 영역에서 포커스 해제될 때 추가 처리
+                                    setTimeout(() => e.target.blur(), 50);
+                                }}
                                 placeholder="전체적인 인상, 질감, 밸런스 등을 자유롭게 기록해주세요..."
                                 className="w-full h-32 p-3 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-sage-green transition-all duration-300"
                             />
@@ -671,6 +797,10 @@
                             <textarea 
                                 value={roastingNotes}
                                 onChange={(e) => setRoastingNotes(e.target.value)}
+                                onBlur={(e) => {
+                                    // 텍스트 영역에서 포커스 해제될 때 추가 처리
+                                    setTimeout(() => e.target.blur(), 50);
+                                }}
                                 placeholder="로스팅 프로파일, 특이사항, 개선 방향 등을 기록해주세요..."
                                 className="w-full h-32 p-3 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-sage-green transition-all duration-300"
                             />
