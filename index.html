@@ -1,5 +1,4 @@
-
-    <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
@@ -11,20 +10,130 @@
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-
-    <!-- 추가한 CSS: Android 포커스 스크롤 방지 -->
-    <link rel="stylesheet" href="fix-android-focus.css">
     
-    <!-- (기존에 <style> 안에 있던 기타 스타일들은 그대로 두셔도 되고,
-         꼭 원치 않으시면 삭제하셔도 됩니다.) -->
     <style>
-        /* …기존 글래스모피즘, 슬라이더 커스텀, 그라데이션 등 모든 스타일… */
+        /* Android 브라우저에서 포커스 시 자동 스크롤 방지 */
+        html, body {
+            overscroll-behavior-y: contain;
+            overflow-anchor: none;
+        }
+
+        /* 커스텀 CSS 변수 정의 */
+        :root {
+            --sage-green: #9CAF88;
+            --forest-green: #6B8E5A;
+            --warm-gray: #8B7355;
+        }
+
+        /* 그라데이션 배경 */
+        .gradient-bg {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+
+        /* 글래스모피즘 효과 */
+        .glass {
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+        }
+
+        /* 호버 효과 */
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.5);
+        }
+
+        /* 애니메이션 */
+        .fade-in {
+            animation: fadeIn 1s ease-in;
+        }
+
+        .slide-up {
+            animation: slideUp 0.8s ease-out forwards;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* 커스텀 슬라이더 스타일 */
+        .slider {
+            background: linear-gradient(to right, #e5e7eb 0%, var(--sage-green) 50%, var(--forest-green) 100%);
+        }
+
+        .slider::-webkit-slider-thumb {
+            appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: var(--sage-green);
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+
+        .slider::-moz-range-thumb {
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: var(--sage-green);
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+
+        /* Tailwind 커스텀 색상 */
+        .text-sage-green { color: var(--sage-green); }
+        .text-forest-green { color: var(--forest-green); }
+        .bg-sage-green { background-color: var(--sage-green); }
+        .bg-forest-green { background-color: var(--forest-green); }
+        .border-sage-green { border-color: var(--sage-green); }
+        .hover\:bg-sage-green:hover { background-color: var(--sage-green); }
+        .hover\:bg-forest-green:hover { background-color: var(--forest-green); }
+        .focus\:ring-sage-green:focus { 
+            --tw-ring-color: var(--sage-green);
+        }
+
+        /* 포커스 스크롤 방지를 위한 추가 CSS */
+        .no-scroll-on-focus input:focus,
+        .no-scroll-on-focus textarea:focus,
+        .no-scroll-on-focus select:focus {
+            scroll-behavior: auto;
+        }
+
+        /* Android 전용 포커스 방지 */
+        @media screen and (max-width: 768px) {
+            input, textarea, select {
+                font-size: 16px; /* iOS 줌 방지 */
+            }
+            
+            .no-scroll-on-focus {
+                scroll-behavior: auto;
+                overscroll-behavior: contain;
+            }
+        }
     </style>
 </head>
 <body class="gradient-bg min-h-screen">
     <div id="root"></div>
 
-    <script type="text/babel">
     <script type="text/babel">
         const { useState, useEffect } = React;
 
@@ -63,6 +172,11 @@
                 const viewport = document.querySelector('meta[name=viewport]');
                 if (viewport) {
                     viewport.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+                }
+
+                // 스크롤 앵커링 방지
+                if (CSS.supports('overflow-anchor', 'none')) {
+                    document.body.style.overflowAnchor = 'none';
                 }
             }, []);
 
@@ -107,7 +221,7 @@
                 );
                 // 안드로이드에서 스크롤 방지
                 if (e.target && e.target.blur) {
-                    e.target.blur();
+                    setTimeout(() => e.target.blur(), 10);
                 }
             };
 
