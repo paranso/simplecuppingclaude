@@ -335,16 +335,7 @@
                 setCustomNotes(prev => ({ ...prev, [category]: value }));
             };
 
-            // 추천 시스템 (15단계 기준)
-            const getRecommendation = () => {
-                let recommendations = [];
-                if (scores.acidity > 10) recommendations.push("산미 강함: 로스팅 온도 약간 상승 고려.");
-                if (scores.body < 6) recommendations.push("바디감 부족: 디벨롭 시간 증가 고려.");
-                if (scores.sweetness < 6) recommendations.push("단맛 부족: 첫 크랙 후 시간 증가 고려.");
-                if (scores.aroma < 6) recommendations.push("향 부족: 전개 시간 조정 고려.");
-                if (scores.aftertaste < 6) recommendations.push("후미 부족: 마무리 온도 조정 고려.");
-                return recommendations.length > 0 ? recommendations.join(' ') : "균형 잡힌 프로파일입니다.";
-            };
+
 
             // 향미 데이터를 깔끔하게 포맷팅하는 함수
             const formatAromaData = () => {
@@ -393,7 +384,6 @@
                 setStatusMessage('💾 저장 중...');
                 setShowSummary(false);
 
-                const recommendation = getRecommendation();
                 const { formattedAromas, formattedNotes } = formatAromaData();
 
                 const dataToSend = {
@@ -411,8 +401,7 @@
                     detectedFlavors: formattedAromas,
                     detailedAromaNotes: formattedNotes,
                     additionalNotes: notes,
-                    roastingNotes: roastingNotes,
-                    roastingRecommendation: recommendation
+                    roastingNotes: roastingNotes
                 };
 
                 try {
@@ -436,8 +425,7 @@
                             selectedAromas: selectedAromas,
                             notes: notes,
                             customNotes: customNotes,
-                            roastingNotes: roastingNotes,
-                            recommendation: recommendation
+                            roastingNotes: roastingNotes
                         });
                         setShowSummary(true);
                     } else {
@@ -526,13 +514,6 @@
                                         <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded-lg">{data.roastingNotes}</p>
                                     </div>
                                 )}
-                            </div>
-                        )}
-                        
-                        {data.recommendation && (
-                            <div className="mt-4 pt-4 border-t bg-green-50 rounded-lg p-3">
-                                <h4 className="font-semibold text-forest-green mb-1">🎯 자동 추천:</h4>
-                                <p className="text-sm text-gray-700">{data.recommendation}</p>
                             </div>
                         )}
                         
